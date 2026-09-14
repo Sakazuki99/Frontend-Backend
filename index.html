@@ -74,13 +74,9 @@
   }
 
   #member-tabs{
-    display: none;
+    display: flex;
     align-items: center;
     gap: 4px;
-  }
-
-  #member-tabs.visible{
-    display: flex;
   }
 
   /* ===== секции верхнего уровня (Главная / Резюме) ===== */
@@ -365,7 +361,6 @@
 
   <nav class="navbar" id="navbar">
     <button class="active" data-page="home">Главная</button>
-    <button data-page="resume">Резюме</button>
     <div class="nav-divider"></div>
     <div id="member-tabs">
       <button data-target="p1">Ибрагим</button>
@@ -381,7 +376,7 @@
       <p class="kicker">Командный проект</p>
       <h1>Четыре человека, один проект</h1>
       <p>Здесь собрана информация о команде — кто мы, чем занимаемся и на каком этапе находится работа. Полный состав и профиль каждого участника — во вкладке «Резюме».</p>
-      <button class="cta" onclick="showPage('resume')">
+      <button class="cta" onclick="showMember('p1')">
         Смотреть состав команды
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg>
       </button>
@@ -390,7 +385,7 @@
     <div class="roster">
       <p class="label">Участники</p>
       <div class="roster-grid">
-        <button class="roster-item" onclick="showPage('resume'); showMember('p1')">
+        <button class="roster-item" onclick="showMember('p1')">
           <div class="avatar">
             <svg viewBox="0 0 100 100">
               <rect width="100" height="100" fill="#000"/>
@@ -400,7 +395,7 @@
           </div>
           <div class="name">Ибрагим</div>
         </button>
-        <button class="roster-item" onclick="showPage('resume'); showMember('p2')">
+        <button class="roster-item" onclick="showMember('p2')">
           <div class="avatar">
             <svg viewBox="0 0 100 100">
               <rect width="100" height="100" fill="#000"/>
@@ -410,7 +405,7 @@
           </div>
           <div class="name">Алиби</div>
         </button>
-        <button class="roster-item" onclick="showPage('resume'); showMember('p3')">
+        <button class="roster-item" onclick="showMember('p3')">
           <div class="avatar">
             <svg viewBox="0 0 100 100">
               <rect width="100" height="100" fill="#000"/>
@@ -420,7 +415,7 @@
           </div>
           <div class="name">Нурболат</div>
         </button>
-        <button class="roster-item" onclick="showPage('resume'); showMember('p4')">
+        <button class="roster-item" onclick="showMember('p4')">
           <div class="avatar">
             <svg viewBox="0 0 100 100">
               <rect width="100" height="100" fill="#000"/>
@@ -542,7 +537,7 @@
           <h2>Оралов Нурболат</h2>
           <div class="role">Вычислительная техника и ПО</div>
           <div class="meta">
-            <div><strong>2</strong>курс, AIU</div>
+            <div><strong>3</strong>курс, AIU</div>
           </div>
         </div>
       </div>
@@ -634,15 +629,23 @@
     });
     document.getElementById('page-' + pageId).classList.add('active');
 
-    document.querySelectorAll('#navbar > button').forEach(function(b){
+    document.querySelectorAll('#navbar > button[data-page]').forEach(function(b){
       b.classList.toggle('active', b.getAttribute('data-page') === pageId);
     });
 
-    document.getElementById('member-tabs').classList.toggle('visible', pageId === 'resume');
+    // вкладка "Главная" активна только когда открыта сама главная;
+    // при открытии профиля активность переходит на нужную вкладку участника
+    if (pageId !== 'resume') {
+      document.querySelectorAll('#member-tabs button').forEach(function(b){
+        b.classList.remove('active');
+      });
+    }
   }
 
-  // переключение участника внутри "Резюме"
+  // переключение участника — также открывает страницу профиля
   function showMember(targetId) {
+    showPage('resume');
+
     document.querySelectorAll('.panel').forEach(function(panel){
       panel.classList.remove('active');
     });
@@ -663,9 +666,6 @@
       showMember(btn.getAttribute('data-target'));
     });
   });
-
-  // инициализация: показать первого участника по умолчанию, но вкладки участников скрыты, пока не открыт "Резюме"
-  showMember('p1');
 </script>
 
 </body>
