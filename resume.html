@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Резюме</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+
+  :root{
+    --bg: #ffffff;
+    --ink: #000000;
+    --ink-soft: #6b6b6b;
+    --line: #e5e5e5;
+  }
+
+  *{ box-sizing: border-box; }
+
+  body{
+    margin:0;
+    background: var(--bg);
+    color: var(--ink);
+    font-family: 'Inter', -apple-system, sans-serif;
+    min-height: 100vh;
+  }
+
+  .wrap{
+    max-width: 780px;
+    margin: 0 auto;
+    padding: 64px 24px 80px;
+  }
+
+  /* site nav */
+  .site-nav{
+    display: flex;
+    border-bottom: 1px solid var(--line);
+    margin-bottom: 48px;
+    overflow-x: auto;
+  }
+
+  .site-nav a{
+    display: inline-block;
+    border-bottom: 2px solid transparent;
+    padding: 14px 20px 14px 0;
+    margin-right: 28px;
+    font-family: 'Inter', sans-serif;
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--ink-soft);
+    text-decoration: none;
+    white-space: nowrap;
+    transition: color 0.15s ease, border-color 0.15s ease;
+  }
+
+  .site-nav a:hover{
+    color: var(--ink);
+  }
+
+  .site-nav a.active{
+    color: var(--ink);
+    border-bottom-color: var(--ink);
+  }
+
+  .masthead{
+    margin-bottom: 48px;
+  }
+
+  .masthead h1{
+    font-size: 32px;
+    font-weight: 800;
+    letter-spacing: -0.5px;
+    margin: 0 0 6px 0;
+  }
+
+  .masthead p{
+    color: var(--ink-soft);
+    font-size: 15px;
+    margin: 0;
+  }
+
+  /* member tab bar */
+  .tabs{
+    display: flex;
+    border-bottom: 1px solid var(--line);
+    margin-bottom: 48px;
+    overflow-x: auto;
+  }
+
+  .tabs button{
+    background: none;
+    border: none;
+    border-bottom: 2px solid transparent;
+    padding: 14px 20px 14px 0;
+    margin-right: 28px;
+    font-family: 'Inter', sans-serif;
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--ink-soft);
+    cursor: pointer;
+    white-space: nowrap;
+    transition: color 0.15s ease, border-color 0.15s ease;
+  }
+
+  .tabs button:hover{
+    color: var(--ink);
+  }
+
+  .tabs button.active{
+    color: var(--ink);
+    border-bottom-color: var(--ink);
+  }
+
+  /* profile panel */
+  .panel{
+    display: none;
+  }
+
+  .panel.active{
+    display: grid;
+    grid-template-columns: 120px 1fr;
+    gap: 32px;
+    animation: fade 0.2s ease;
+  }
+
+  @keyframes fade{
+    from{ opacity: 0; transform: translateY(4px); }
+    to{ opacity: 1; transform: translateY(0); }
+  }
+
+  .avatar-box{
+    width: 120px;
+    height: 120px;
+    border-radius: 50%;
+    overflow: hidden;
+    background: #000;
+    flex-shrink: 0;
+  }
+
+  .avatar-box svg{
+    width:100%;
+    height:100%;
+    display:block;
+  }
+
+  .info h2{
+    font-size: 24px;
+    font-weight: 800;
+    letter-spacing: -0.3px;
+    margin: 0 0 4px 0;
+  }
+
+  .info .role{
+    font-size: 15px;
+    font-weight: 500;
+    color: var(--ink-soft);
+    margin-bottom: 18px;
+  }
+
+  .info .meta{
+    display:flex;
+    gap: 24px;
+    margin-bottom: 20px;
+    padding-bottom: 20px;
+    border-bottom: 1px solid var(--line);
+  }
+
+  .info .meta div{
+    font-size: 13px;
+    color: var(--ink-soft);
+  }
+
+  .info .meta strong{
+    display:block;
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--ink);
+    margin-bottom: 2px;
+  }
+
+  .info p.bio{
+    font-size: 15px;
+    line-height: 1.65;
+    color: #2b2b2b;
+    max-width: 56ch;
+    margin: 0;
+    font-weight: 400;
+  }
+
+  @media (max-width: 560px){
+    .panel.active{ grid-template-columns: 1fr; }
+    .avatar-box{ width: 88px; height: 88px; }
+    .tabs button{ padding-right: 0; margin-right: 20px; font-size: 14px; }
+    .site-nav a{ padding-right: 0; margin-right: 20px; font-size: 14px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="wrap">
+
+  <div class="site-nav">
+    <a href="index.html">Главная</a>
+    <a href="resume.html" class="active">Резюме</a>
+  </div>
+
+  <div class="masthead">
+    <h1>Состав команды</h1>
+    <p>Четыре участника — один проект</p>
+  </div>
+
+  <div class="tabs" id="tabs">
+    <button class="active" data-target="p1">Ибрагим</button>
+    <button data-target="p2">Алиби</button>
+    <button data-target="p3">Нурболат</button>
+    <button data-target="p4">Алихан</button>
+  </div>
+
+  <div class="panel active" id="p1">
+    <div class="avatar-box">
+      <svg viewBox="0 0 100 100">
+        <rect width="100" height="100" fill="#000"/>
+        <circle cx="38" cy="40" r="22" fill="#fff"/>
+        <rect x="55" y="55" width="40" height="40" fill="#fff" transform="rotate(20 55 55)"/>
+      </svg>
+    </div>
+    <div class="info">
+      <h2>Эгембердиев Ибрагим</h2>
+      <div class="role">Начинающий Java-разработчик</div>
+      <div class="meta">
+        <div><strong>19</strong>лет</div>
+      </div>
+      <p class="bio">Изучает Java и делает первые проекты, нацелен на рост в разработке. Собирает практический опыт и постепенно расширяет портфолио.</p>
+    </div>
+  </div>
+
+  <div class="panel" id="p2">
+    <div class="avatar-box">
+      <svg viewBox="0 0 100 100">
+        <rect width="100" height="100" fill="#000"/>
+        <polygon points="50,15 85,80 15,80" fill="#fff"/>
+        <circle cx="50" cy="35" r="10" fill="#000"/>
+      </svg>
+    </div>
+    <div class="info">
+      <h2>Алиби Тулеугалиев</h2>
+      <div class="role">Студент, спортсмен и организатор</div>
+      <div class="meta">
+        <div><strong>3</strong>курс</div>
+      </div>
+      <p class="bio">Бывший капитан областной сборной по волейболу, организатор турниров по армрестлингу и в прошлом участник школьных олимпиад. Амбициозен в учёбе и спорте, а главную ценность видит в том, чтобы быть хорошим сыном для своих родителей.</p>
+    </div>
+  </div>
+
+  <div class="panel" id="p3">
+    <div class="avatar-box">
+      <svg viewBox="0 0 100 100">
+        <rect width="100" height="100" fill="#000"/>
+        <rect x="20" y="20" width="30" height="30" fill="#fff"/>
+        <rect x="55" y="55" width="30" height="30" fill="#fff"/>
+      </svg>
+    </div>
+    <div class="info">
+      <h2>Оралов Нурболат</h2>
+      <div class="role">Вычислительная техника и ПО</div>
+      <div class="meta">
+        <div><strong>2</strong>курс, AIU</div>
+      </div>
+      <p class="bio">Изучает вычислительную технику и программное обеспечение в Astana International University, развивает техническую базу для будущих проектов в IT.</p>
+    </div>
+  </div>
+
+  <div class="panel" id="p4">
+    <div class="avatar-box">
+      <svg viewBox="0 0 100 100">
+        <rect width="100" height="100" fill="#000"/>
+        <path d="M15 80 Q50 15 85 80 Z" fill="#fff"/>
+      </svg>
+    </div>
+    <div class="info">
+      <h2>Полатов Алихан</h2>
+      <div class="role">Начинающий предприниматель</div>
+      <div class="meta">
+        <div><strong>19</strong>лет</div>
+      </div>
+      <p class="bio">Пробует силы в предпринимательстве, ищет и тестирует идеи для собственных проектов на раннем этапе своего пути.</p>
+    </div>
+  </div>
+
+</div>
+
+<script>
+  function switchMember(targetId, btn) {
+    document.querySelectorAll('.panel').forEach(function(panel){
+      panel.classList.remove('active');
+    });
+    document.querySelectorAll('.tabs button').forEach(function(b){
+      b.classList.remove('active');
+    });
+    document.getElementById(targetId).classList.add('active');
+    btn.classList.add('active');
+  }
+
+  document.querySelectorAll('.tabs button').forEach(function(btn){
+    btn.addEventListener('click', function(){
+      switchMember(btn.getAttribute('data-target'), btn);
+    });
+  });
+</script>
+
+</body>
+</html>

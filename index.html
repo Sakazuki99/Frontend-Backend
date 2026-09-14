@@ -1,1 +1,235 @@
-git branch -M master
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Главная</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+
+  :root{
+    --bg: #ffffff;
+    --ink: #000000;
+    --ink-soft: #6b6b6b;
+    --line: #e5e5e5;
+  }
+
+  *{ box-sizing: border-box; }
+
+  body{
+    margin:0;
+    background: var(--bg);
+    color: var(--ink);
+    font-family: 'Inter', -apple-system, sans-serif;
+    min-height: 100vh;
+  }
+
+  .wrap{
+    max-width: 780px;
+    margin: 0 auto;
+    padding: 64px 24px 80px;
+  }
+
+  /* site nav — same tab language as the resume page */
+  .tabs{
+    display: flex;
+    border-bottom: 1px solid var(--line);
+    margin-bottom: 64px;
+    overflow-x: auto;
+  }
+
+  .tabs a{
+    display: inline-block;
+    border-bottom: 2px solid transparent;
+    padding: 14px 20px 14px 0;
+    margin-right: 28px;
+    font-family: 'Inter', sans-serif;
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--ink-soft);
+    text-decoration: none;
+    white-space: nowrap;
+    transition: color 0.15s ease, border-color 0.15s ease;
+  }
+
+  .tabs a:hover{
+    color: var(--ink);
+  }
+
+  .tabs a.active{
+    color: var(--ink);
+    border-bottom-color: var(--ink);
+  }
+
+  /* hero */
+  .hero{
+    margin-bottom: 72px;
+  }
+
+  .hero .kicker{
+    font-size: 15px;
+    font-weight: 500;
+    color: var(--ink-soft);
+    margin: 0 0 18px 0;
+  }
+
+  .hero h1{
+    font-size: 44px;
+    line-height: 1.12;
+    font-weight: 800;
+    letter-spacing: -0.8px;
+    margin: 0 0 24px 0;
+    max-width: 14ch;
+  }
+
+  .hero p{
+    font-size: 16px;
+    line-height: 1.65;
+    color: #2b2b2b;
+    max-width: 52ch;
+    margin: 0 0 32px 0;
+  }
+
+  .hero .cta{
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    background: var(--ink);
+    color: #fff;
+    text-decoration: none;
+    font-size: 15px;
+    font-weight: 600;
+    padding: 13px 22px;
+    transition: opacity 0.15s ease;
+  }
+
+  .hero .cta:hover{
+    opacity: 0.85;
+  }
+
+  .hero .cta svg{
+    width: 14px;
+    height: 14px;
+    flex-shrink: 0;
+  }
+
+  /* roster strip */
+  .roster{
+    border-top: 1px solid var(--line);
+    padding-top: 36px;
+  }
+
+  .roster .label{
+    font-size: 13px;
+    color: var(--ink-soft);
+    margin: 0 0 20px 0;
+  }
+
+  .roster-grid{
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 20px;
+  }
+
+  .roster-item{
+    display: block;
+    text-decoration: none;
+    color: inherit;
+  }
+
+  .roster-item .avatar{
+    width: 100%;
+    aspect-ratio: 1;
+    background: #000;
+    border-radius: 50%;
+    overflow: hidden;
+    margin-bottom: 12px;
+  }
+
+  .roster-item .avatar svg{
+    width: 100%;
+    height: 100%;
+    display: block;
+  }
+
+  .roster-item .name{
+    font-size: 13px;
+    font-weight: 600;
+    line-height: 1.4;
+  }
+
+  @media (max-width: 560px){
+    .hero h1{ font-size: 32px; max-width: none; }
+    .roster-grid{ grid-template-columns: repeat(2, 1fr); gap: 24px; }
+    .tabs a{ padding-right: 0; margin-right: 20px; font-size: 14px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="wrap">
+
+  <div class="tabs">
+    <a href="index.html" class="active">Главная</a>
+    <a href="resume.html">Резюме</a>
+  </div>
+
+  <div class="hero">
+    <p class="kicker">Командный проект</p>
+    <h1>Четыре человека, один проект</h1>
+    <p>Здесь собрана информация о команде — кто мы, чем занимаемся и на каком этапе находится работа. Полный состав и профиль каждого участника — во вкладке «Резюме».</p>
+    <a class="cta" href="resume.html">
+      Смотреть состав команды
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg>
+    </a>
+  </div>
+
+  <div class="roster">
+    <p class="label">Участники</p>
+    <div class="roster-grid">
+      <a class="roster-item" href="resume.html">
+        <div class="avatar">
+          <svg viewBox="0 0 100 100">
+            <rect width="100" height="100" fill="#000"/>
+            <circle cx="38" cy="40" r="22" fill="#fff"/>
+            <rect x="55" y="55" width="40" height="40" fill="#fff" transform="rotate(20 55 55)"/>
+          </svg>
+        </div>
+        <div class="name">Ибрагим</div>
+      </a>
+      <a class="roster-item" href="resume.html">
+        <div class="avatar">
+          <svg viewBox="0 0 100 100">
+            <rect width="100" height="100" fill="#000"/>
+            <polygon points="50,15 85,80 15,80" fill="#fff"/>
+            <circle cx="50" cy="35" r="10" fill="#000"/>
+          </svg>
+        </div>
+        <div class="name">Алиби</div>
+      </a>
+      <a class="roster-item" href="resume.html">
+        <div class="avatar">
+          <svg viewBox="0 0 100 100">
+            <rect width="100" height="100" fill="#000"/>
+            <rect x="20" y="20" width="30" height="30" fill="#fff"/>
+            <rect x="55" y="55" width="30" height="30" fill="#fff"/>
+          </svg>
+        </div>
+        <div class="name">Нурболат</div>
+      </a>
+      <a class="roster-item" href="resume.html">
+        <div class="avatar">
+          <svg viewBox="0 0 100 100">
+            <rect width="100" height="100" fill="#000"/>
+            <path d="M15 80 Q50 15 85 80 Z" fill="#fff"/>
+          </svg>
+        </div>
+        <div class="name">Алихан</div>
+      </a>
+    </div>
+  </div>
+
+</div>
+
+</body>
+</html>
