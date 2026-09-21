@@ -1,9 +1,4 @@
 function runTask1() {
-  const targetElement = document.getElementById('target-element');
-  if (targetElement) {
-    targetElement.textContent = 'Привет, мир!';
-  }
-
   document.querySelectorAll('.old-element').forEach(function (element) {
     element.remove();
   });
@@ -17,6 +12,13 @@ function runTask1() {
       paragraph.classList.toggle('is-changed');
     });
     result.appendChild(paragraph);
+  }
+}
+
+function changeTargetText() {
+  const targetElement = document.getElementById('target-element');
+  if (targetElement) {
+    targetElement.textContent = 'Привет, мир!';
   }
 }
 
