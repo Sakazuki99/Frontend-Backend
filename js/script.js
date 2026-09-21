@@ -1,16 +1,18 @@
 function runTask1() {
-  const target = document.getElementById('target-element');
-  if (target) {
-    target.textContent = "Привет, мир!";
+  document.querySelector('.old-element')?.remove();
+
+  const result = document.getElementById('task1-result');
+  if (!result || result.querySelector('.editable-paragraph')) {
+    return;
   }
 
-  let existingNewDiv = document.querySelector('body > .new-div');
-  if (!existingNewDiv) {
-    const newDiv = document.createElement('div');
-    newDiv.className = 'new-div';
-    newDiv.textContent = "Я новый элемент";
-    document.body.appendChild(newDiv);
-  }
+  const paragraph = document.createElement('p');
+  paragraph.className = 'editable-paragraph';
+  paragraph.textContent = 'Это изменяемый абзац.';
+  paragraph.addEventListener('click', function () {
+    paragraph.classList.toggle('is-changed');
+  });
+  result.appendChild(paragraph);
 }
 
 function showPage(pageId) {

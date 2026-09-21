@@ -346,14 +346,17 @@ body{
   .avatar-box{ width: 88px; height: 88px; }
   .navbar button{ padding: 12px 14px; font-size: 14px; }
 }
-.new-div {
-  margin-top: 20px;
-  padding: 14px 18px;
-  background: #000;
-  color: #fff;
-  font-weight: 600;
-  border-radius: 6px;
-  animation: fade 0.3s ease;
+.editable-paragraph {
+  margin: 0 0 16px;
+  color: #2b2b2b;
+  cursor: pointer;
+  font-size: 16px;
+  transition: color 0.2s ease, font-size 0.2s ease;
+}
+
+.editable-paragraph.is-changed {
+  color: #b42318;
+  font-size: 22px;
 }
 
 mark {
