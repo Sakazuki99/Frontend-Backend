@@ -1,0 +1,348 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+
+:root{
+  --bg: #ffffff;
+  --ink: #000000;
+  --ink-soft: #6b6b6b;
+  --ink-faint: #9a9a9a;
+  --line: #e5e5e5;
+  --chip-bg: #f4f4f4;
+}
+
+*{ box-sizing: border-box; }
+
+body{
+  margin:0;
+  background: var(--bg);
+  color: var(--ink);
+  font-family: 'Inter', -apple-system, sans-serif;
+  min-height: 100vh;
+}
+
+.wrap{
+  max-width: 780px;
+  margin: 0 auto;
+  padding: 40px 24px 80px;
+}
+
+/* Навигация */
+.navbar{
+  display: flex;
+  align-items: center;
+  border-bottom: 1px solid var(--line);
+  margin-bottom: 48px;
+  overflow-x: auto;
+  gap: 4px;
+}
+
+.navbar button{
+  background: none;
+  border: none;
+  border-bottom: 2px solid transparent;
+  padding: 14px 18px;
+  font-family: 'Inter', sans-serif;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--ink-soft);
+  cursor: pointer;
+  white-space: nowrap;
+  transition: color 0.15s ease, border-color 0.15s ease;
+}
+
+.navbar button:hover{
+  color: var(--ink);
+}
+
+.navbar button.active{
+  color: var(--ink);
+  border-bottom-color: var(--ink);
+}
+
+.nav-divider{
+  width: 1px;
+  align-self: stretch;
+  background: var(--line);
+  margin: 10px 6px;
+  flex-shrink: 0;
+}
+
+#member-tabs{
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+/* Секции страниц (Главная / Резюме) */
+.page{
+  display: none;
+}
+
+.page.active{
+  display: block;
+  animation: fade 0.2s ease;
+}
+
+@keyframes fade{
+  from{ opacity: 0; transform: translateY(4px); }
+  to{ opacity: 1; transform: translateY(0); }
+}
+
+/* Главная */
+.hero{
+  margin-bottom: 72px;
+}
+
+.hero .kicker{
+  font-size: 15px;
+  font-weight: 500;
+  color: var(--ink-soft);
+  margin: 0 0 18px 0;
+}
+
+.hero h1{
+  font-size: 44px;
+  line-height: 1.12;
+  font-weight: 800;
+  letter-spacing: -0.8px;
+  margin: 0 0 24px 0;
+  max-width: 14ch;
+}
+
+.hero p{
+  font-size: 16px;
+  line-height: 1.65;
+  color: #2b2b2b;
+  max-width: 52ch;
+  margin: 0 0 32px 0;
+}
+
+.hero .cta{
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  background: var(--ink);
+  color: #fff;
+  border: none;
+  font-family: 'Inter', sans-serif;
+  text-decoration: none;
+  font-size: 15px;
+  font-weight: 600;
+  padding: 13px 22px;
+  cursor: pointer;
+  transition: opacity 0.15s ease;
+}
+
+.hero .cta:hover{
+  opacity: 0.85;
+}
+
+.hero .cta svg{
+  width: 14px;
+  height: 14px;
+  flex-shrink: 0;
+}
+
+.roster{
+  border-top: 1px solid var(--line);
+  padding-top: 36px;
+}
+
+.roster .label{
+  font-size: 13px;
+  color: var(--ink-soft);
+  margin: 0 0 20px 0;
+}
+
+.roster-grid{
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 20px;
+}
+
+.roster-item{
+  display: block;
+  text-decoration: none;
+  color: inherit;
+  background: none;
+  border: none;
+  text-align: left;
+  padding: 0;
+  cursor: pointer;
+  font-family: 'Inter', sans-serif;
+}
+
+.roster-item .avatar{
+  width: 100%;
+  aspect-ratio: 1;
+  background: #000;
+  border-radius: 50%;
+  overflow: hidden;
+  margin-bottom: 12px;
+}
+
+.roster-item .avatar svg{
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+.roster-item .name{
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.4;
+}
+
+/* Резюме / Профили */
+.masthead{
+  margin-bottom: 40px;
+}
+
+.masthead h1{
+  font-size: 32px;
+  font-weight: 800;
+  letter-spacing: -0.5px;
+  margin: 0 0 6px 0;
+}
+
+.masthead p{
+  color: var(--ink-soft);
+  font-size: 15px;
+  margin: 0;
+}
+
+.panel{
+  display: none;
+}
+
+.panel.active{
+  display: block;
+  animation: fade 0.2s ease;
+}
+
+.profile-head{
+  display: grid;
+  grid-template-columns: 120px 1fr;
+  gap: 32px;
+  margin-bottom: 28px;
+}
+
+.avatar-box{
+  width: 120px;
+  height: 120px;
+  border-radius: 50%;
+  overflow: hidden;
+  background: #000;
+  flex-shrink: 0;
+}
+
+.avatar-box svg{
+  width:100%;
+  height:100%;
+  display:block;
+}
+
+.info h2{
+  font-size: 24px;
+  font-weight: 800;
+  letter-spacing: -0.3px;
+  margin: 0 0 4px 0;
+}
+
+.info .role{
+  font-size: 15px;
+  font-weight: 500;
+  color: var(--ink-soft);
+  margin-bottom: 18px;
+}
+
+.info .meta{
+  display:flex;
+  gap: 28px;
+}
+
+.info .meta div{
+  font-size: 13px;
+  color: var(--ink-soft);
+}
+
+.info .meta strong{
+  display:block;
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--ink);
+  margin-bottom: 2px;
+}
+
+.section{
+  padding-top: 22px;
+  border-top: 1px solid var(--line);
+  margin-bottom: 22px;
+}
+
+.section h3{
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--ink-faint);
+  letter-spacing: 0.3px;
+  margin: 0 0 12px 0;
+}
+
+.bio{
+  font-size: 15px;
+  line-height: 1.7;
+  color: #2b2b2b;
+  max-width: 58ch;
+  margin: 0;
+  font-weight: 400;
+}
+
+.chips{
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.chip{
+  display: inline-block;
+  padding: 6px 14px;
+  border-radius: 999px;
+  background: var(--chip-bg);
+  font-size: 13px;
+  font-weight: 600;
+  color: #2b2b2b;
+}
+
+.highlights{
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 10px;
+}
+
+.highlights li{
+  position: relative;
+  padding-left: 18px;
+  font-size: 14.5px;
+  line-height: 1.55;
+  color: #2b2b2b;
+}
+
+.highlights li::before{
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 7px;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--ink);
+}
+
+@media (max-width: 560px){
+  .hero h1{ font-size: 32px; max-width: none; }
+  .roster-grid{ grid-template-columns: repeat(2, 1fr); gap: 24px; }
+  .profile-head{ grid-template-columns: 1fr; }
+  .avatar-box{ width: 88px; height: 88px; }
+  .navbar button{ padding: 12px 14px; font-size: 14px; }
+}
