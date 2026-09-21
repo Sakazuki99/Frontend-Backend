@@ -12,11 +12,11 @@
 
   <nav class="navbar" id="navbar">
     <button class="active" data-page="home">Главная</button>
-    <button data-page="task2">Задание 2</button>
     <div class="nav-divider"></div>
     <button data-page="resume" onclick="showMember('p1')">Резюме команды</button>
     <div class="nav-divider"></div>
-    <button data-page="task1">Task 1</button>
+    <button data-page="task1">Задание 1</button>
+    <button data-page="task2">Задание 2</button>
     
     <div id="member-tabs" style="display: none;">
       <div class="nav-divider"></div>
@@ -84,8 +84,6 @@
     </div>
   </section>
 
-<<<<<<< HEAD
-  <!-- ===================== ЗАДАНИЕ 2 ===================== -->
   <section class="page" id="page-task2">
     <div class="masthead">
       <h1>Задание 2: Управление классами</h1>
@@ -93,8 +91,7 @@
     </div>
 
     <div class="task-box">
-      <!-- Целевой элемент -->
-      <div id="target-element" class="demo-box card feature">
+      <div id="task2-target-element" class="demo-box card feature">
         Тестовый блок
       </div>
 
@@ -109,9 +106,6 @@
     </div>
   </section>
 
-  <!-- ===================== РЕЗЮМЕ ===================== -->
-=======
->>>>>>> bc8b0b1f5a542945b470fa64fb7dbebfd7f0c273
   <section class="page" id="page-resume">
     <div class="masthead">
       <h1>Состав команды</h1>
@@ -306,6 +300,8 @@
     <div class="section">
       <h3>Условие задачи</h3>
       <ul class="highlights">
+        <li>Найдите элемент по ID и измените его текст на «Привет, мир!».</li>
+        <li>Создайте новый элемент &lt;div&gt; с классом <mark>new-div</mark> и текстом «Я новый элемент», добавив его в конец &lt;body&gt;.</li>
         <li>Удалите элемент с классом <mark>old-element</mark>.</li>
         <li>Создайте абзац с текстом «Это изменяемый абзац.» и изменяйте его цвет и размер шрифта по клику.</li>
       </ul>
@@ -313,8 +309,10 @@
 
     <div class="section">
       <h3>Результат выполнения</h3>
+      <div id="target-element" class="task1-target">Исходный текст элемента.</div>
+      <div class="old-element task1-old-element">Этот элемент будет удалён скриптом.</div>
       <div id="task1-result"></div>
-      <button class="cta" onclick="runTask1()" style="padding: 10px 16px; font-size: 14px;">Перезапустить Task 1</button>
+      <button class="cta" onclick="createTask1NewDiv()" style="padding: 10px 16px; font-size: 14px;">Создать новый элемент</button>
     </div>
   </section>
 

@@ -1,111 +1,65 @@
-<<<<<<< HEAD
-document.addEventListener('DOMContentLoaded', () => {
-  const pages = document.querySelectorAll('.page');
-  const navButtons = document.querySelectorAll('.navbar > button');
-  const memberTabs = document.querySelectorAll('#member-tabs button');
-  const panels = document.querySelectorAll('.panel');
-=======
 function runTask1() {
-  document.querySelector('.old-element')?.remove();
+  const targetElement = document.getElementById('target-element');
+  if (targetElement) {
+    targetElement.textContent = 'Привет, мир!';
+  }
+
+  document.querySelectorAll('.old-element').forEach(function (element) {
+    element.remove();
+  });
 
   const result = document.getElementById('task1-result');
-  if (!result || result.querySelector('.editable-paragraph')) {
+  if (result && !result.querySelector('.editable-paragraph')) {
+    const paragraph = document.createElement('p');
+    paragraph.className = 'editable-paragraph';
+    paragraph.textContent = 'Это изменяемый абзац.';
+    paragraph.addEventListener('click', function () {
+      paragraph.classList.toggle('is-changed');
+    });
+    result.appendChild(paragraph);
+  }
+}
+
+function createTask1NewDiv() {
+  if (document.body.querySelector('.new-div')) {
     return;
   }
 
-  const paragraph = document.createElement('p');
-  paragraph.className = 'editable-paragraph';
-  paragraph.textContent = 'Это изменяемый абзац.';
-  paragraph.addEventListener('click', function () {
-    paragraph.classList.toggle('is-changed');
-  });
-  result.appendChild(paragraph);
+  const newDiv = document.createElement('div');
+  newDiv.className = 'new-div';
+  newDiv.textContent = 'Я новый элемент';
+  document.body.appendChild(newDiv);
+}
+
+function updateTask2ClassList() {
+  const targetElement = document.getElementById('task2-target-element');
+  const output = document.getElementById('class-list-output');
+  if (!targetElement || !output) {
+    return;
+  }
+
+  const classes = Array.from(targetElement.classList);
+  console.log('Список классов элемента:', classes);
+  output.textContent = classes.length ? classes.join(', ') : '(классы отсутствуют)';
 }
 
 function showPage(pageId) {
-  document.querySelectorAll('.page').forEach(function(p){
-    p.classList.remove('active');
-  });
-  document.getElementById('page-' + pageId).classList.add('active');
->>>>>>> bc8b0b1f5a542945b470fa64fb7dbebfd7f0c273
-
-  function resetNavButtons() {
-    navButtons.forEach(btn => btn.classList.remove('active'));
-    memberTabs.forEach(btn => btn.classList.remove('active'));
+  const selectedPage = document.getElementById('page-' + pageId);
+  if (!selectedPage) {
+    return;
   }
 
-  navButtons.forEach(btn => {
-    btn.addEventListener('click', () => {
-      const pageId = `page-${btn.dataset.page}`;
-      
-      pages.forEach(page => {
-        page.classList.toggle('active', page.id === pageId);
-      });
-
-      resetNavButtons();
-      btn.classList.add('active');
-    });
+  document.querySelectorAll('.page').forEach(function (page) {
+    page.classList.toggle('active', page === selectedPage);
   });
 
-<<<<<<< HEAD
-  window.showMember = function(memberId) {
-    pages.forEach(page => {
-      page.classList.toggle('active', page.id === 'page-resume');
-    });
-
-    resetNavButtons();
-    memberTabs.forEach(btn => {
-      btn.classList.toggle('active', btn.dataset.target === memberId);
-    });
-
-    panels.forEach(panel => {
-      panel.classList.toggle('active', panel.id === memberId);
-    });
-
-    window.location.hash = memberId;
-  };
-
-ц
-  memberTabs.forEach(btn => {
-    btn.addEventListener('click', () => {
-      showMember(btn.dataset.target);
-    });
+  document.querySelectorAll('#navbar > button[data-page]').forEach(function (button) {
+    button.classList.toggle('active', button.dataset.page === pageId);
   });
 
-  const initialHash = window.location.hash.replace('#', '');
-  if (initialHash && document.getElementById(initialHash)) {
-    showMember(initialHash);
-  }
-
-  // Задание 2: Логика управления классами
-  const targetElement = document.getElementById('target-element');
-  const toggleBtn = document.getElementById('toggle-btn');
-  const classListOutput = document.getElementById('class-list-output');
-
-  function updateClassListInfo() {
-    const classes = Array.from(targetElement.classList);
-    const classString = classes.join(', ');
-
-    console.log('Текущий список классов элемента:', classes);
-
-    classListOutput.textContent = classString ? classString : '(Классы отсутствуют)';
-  }
-
-  if (targetElement && toggleBtn && classListOutput) {
-    updateClassListInfo();
-
-    toggleBtn.addEventListener('click', () => {
-      targetElement.classList.toggle('active');
-      
-      updateClassListInfo();
-    });
-  }
-=======
   const memberTabs = document.getElementById('member-tabs');
-  if (pageId === 'resume') {
-    memberTabs.style.display = 'flex';
-  } else {
-    memberTabs.style.display = 'none';
+  if (memberTabs) {
+    memberTabs.style.display = pageId === 'resume' ? 'flex' : 'none';
   }
 
   if (pageId === 'task1') {
@@ -113,25 +67,38 @@ function showPage(pageId) {
   }
 }
 
-function showMember(targetId) {
+function showMember(memberId) {
   showPage('resume');
 
-  document.querySelectorAll('.panel').forEach(function(panel){
-    panel.classList.remove('active');
+  document.querySelectorAll('.panel').forEach(function (panel) {
+    panel.classList.toggle('active', panel.id === memberId);
   });
-  document.querySelectorAll('#member-tabs button').forEach(function(b){
-    b.classList.toggle('active', b.getAttribute('data-target') === targetId);
+
+  document.querySelectorAll('#member-tabs button[data-target]').forEach(function (button) {
+    button.classList.toggle('active', button.dataset.target === memberId);
   });
-  document.getElementById(targetId).classList.add('active');
 }
 
-document.querySelectorAll('#navbar > button[data-page]').forEach(function(btn){
-  btn.addEventListener('click', function(){
-    showPage(btn.getAttribute('data-page'));
+document.addEventListener('DOMContentLoaded', function () {
+  document.querySelectorAll('#navbar > button[data-page]').forEach(function (button) {
+    button.addEventListener('click', function () {
+      showPage(button.dataset.page);
+    });
   });
-<<<<<<< HEAD
+
+  const toggleButton = document.getElementById('toggle-btn');
+  const task2Target = document.getElementById('task2-target-element');
+  if (toggleButton && task2Target) {
+    toggleButton.addEventListener('click', function () {
+      if (task2Target.classList.contains('active')) {
+        task2Target.classList.remove('active');
+      } else {
+        task2Target.classList.add('active');
+      }
+      updateTask2ClassList();
+    });
+  }
+
+  updateTask2ClassList();
+  runTask1();
 });
-=======
->>>>>>> bc8b0b1f5a542945b470fa64fb7dbebfd7f0c273
-});
->>>>>>> ef216c5b0f7589fed420a459c0b96f2f1936a58a
