@@ -18,6 +18,13 @@ function changeTargetText() {
   }
 }
 
+function removeChangedElement() {
+  const targetElement = document.getElementById('target-element');
+  if (targetElement) {
+    targetElement.remove();
+  }
+}
+
 function createTask1NewDiv() {
   if (document.body.querySelector('.new-div')) {
     return;
