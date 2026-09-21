@@ -10,25 +10,28 @@
 
 <div class="wrap">
 
-  <!-- Навигация -->
   <nav class="navbar" id="navbar">
     <button class="active" data-page="home">Главная</button>
     <div class="nav-divider"></div>
-    <div id="member-tabs">
-      <button data-target="p1">Ибрагим</button>
-      <button data-target="p2">Алиби</button>
-      <button data-target="p3">Нурболат</button>
-      <button data-target="p4">Алихан</button>
+    <button data-page="resume" onclick="showMember('p1')">Резюме команды</button>
+    <div class="nav-divider"></div>
+    <button data-page="task1">Task 1</button>
+    
+    <div id="member-tabs" style="display: none;">
+      <div class="nav-divider"></div>
+      <button data-target="p1" onclick="showMember('p1')">Ибрагим</button>
+      <button data-target="p2" onclick="showMember('p2')">Алиби</button>
+      <button data-target="p3" onclick="showMember('p3')">Нурболат</button>
+      <button data-target="p4" onclick="showMember('p4')">Алихан</button>
     </div>
   </nav>
 
-  <!-- ===================== ГЛАВНАЯ ===================== -->
   <section class="page active" id="page-home">
     <div class="hero">
       <p class="kicker">Командный проект</p>
       <h1>Четыре человека, один проект</h1>
       <p>Здесь собрана информация о команде — кто мы, чем занимаемся и на каком этапе находится работа. Полный состав и профиль каждого участника — во вкладке «Резюме».</p>
-      <button class="cta" onclick="showMember('p1')">
+      <button class="cta" onclick="showMember('p1'); showPage('resume');">
         Смотреть состав команды
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg>
       </button>
@@ -37,7 +40,7 @@
     <div class="roster">
       <p class="label">Участники</p>
       <div class="roster-grid">
-        <button class="roster-item" onclick="showMember('p1')">
+        <button class="roster-item" onclick="showMember('p1'); showPage('resume');">
           <div class="avatar">
             <svg viewBox="0 0 100 100">
               <rect width="100" height="100" fill="#000"/>
@@ -47,7 +50,7 @@
           </div>
           <div class="name">Ибрагим</div>
         </button>
-        <button class="roster-item" onclick="showMember('p2')">
+        <button class="roster-item" onclick="showMember('p2'); showPage('resume');">
           <div class="avatar">
             <svg viewBox="0 0 100 100">
               <rect width="100" height="100" fill="#000"/>
@@ -57,7 +60,7 @@
           </div>
           <div class="name">Алиби</div>
         </button>
-        <button class="roster-item" onclick="showMember('p3')">
+        <button class="roster-item" onclick="showMember('p3'); showPage('resume');">
           <div class="avatar">
             <svg viewBox="0 0 100 100">
               <rect width="100" height="100" fill="#000"/>
@@ -67,7 +70,7 @@
           </div>
           <div class="name">Нурболат</div>
         </button>
-        <button class="roster-item" onclick="showMember('p4')">
+        <button class="roster-item" onclick="showMember('p4'); showPage('resume');">
           <div class="avatar">
             <svg viewBox="0 0 100 100">
               <rect width="100" height="100" fill="#000"/>
@@ -80,14 +83,12 @@
     </div>
   </section>
 
-  <!-- ===================== РЕЗЮМЕ ===================== -->
   <section class="page" id="page-resume">
     <div class="masthead">
       <h1>Состав команды</h1>
       <p>Четыре участника — один проект</p>
     </div>
 
-    <!-- Ибрагим -->
     <div class="panel active" id="p1">
       <div class="profile-head">
         <div class="avatar-box">
@@ -130,7 +131,6 @@
       </div>
     </div>
 
-    <!-- Алиби -->
     <div class="panel" id="p2">
       <div class="profile-head">
         <div class="avatar-box">
@@ -175,7 +175,6 @@
       </div>
     </div>
 
-    <!-- Нурболат -->
     <div class="panel" id="p3">
       <div class="profile-head">
         <div class="avatar-box">
@@ -218,7 +217,6 @@
       </div>
     </div>
 
-    <!-- Алихан -->
     <div class="panel" id="p4">
       <div class="profile-head">
         <div class="avatar-box">
@@ -268,7 +266,29 @@
         <p class="bio">Хочу создавать проекты, которые решают реальные задачи людей, развивать их шаг за шагом и собирать вокруг них сильную команду.</p>
       </div>
     </div>
+  </section>
 
+  <section class="page" id="page-task1">
+    <div class="masthead">
+      <h1>Практическое задание 1</h1>
+      <p>Работа с DOM-деревом на JavaScript</p>
+    </div>
+
+    <div class="section">
+      <h3>Условие задачи</h3>
+      <ul class="highlights">
+        <li>Найдите элемент по ID и измените его текст на "Привет, мир!".</li>
+        <li>Создайте новый элемент &lt;div&gt; с классом <mark>new-div</mark> и текстом "Я новый элемент", и добавьте его в конец &lt;body&gt;.</li>
+      </ul>
+    </div>
+
+    <div class="section">
+      <h3>Результат выполнения</h3>
+      <div id="target-element" style="padding: 12px; background: var(--chip-bg); border-radius: 6px; margin-bottom: 16px;">
+        Исходный текст этого элемента изменится при открытии вкладки.
+      </div>
+      <button class="cta" onclick="runTask1()" style="padding: 10px 16px; font-size: 14px;">Перезапустить Task 1</button>
+    </div>
   </section>
 
 </div>

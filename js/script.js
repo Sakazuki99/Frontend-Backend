@@ -1,4 +1,18 @@
-// Переключение страниц верхнего уровня: Главная / Резюме
+function runTask1() {
+  const target = document.getElementById('target-element');
+  if (target) {
+    target.textContent = "Привет, мир!";
+  }
+
+  let existingNewDiv = document.querySelector('body > .new-div');
+  if (!existingNewDiv) {
+    const newDiv = document.createElement('div');
+    newDiv.className = 'new-div';
+    newDiv.textContent = "Я новый элемент";
+    document.body.appendChild(newDiv);
+  }
+}
+
 function showPage(pageId) {
   document.querySelectorAll('.page').forEach(function(p){
     p.classList.remove('active');
@@ -9,15 +23,18 @@ function showPage(pageId) {
     b.classList.toggle('active', b.getAttribute('data-page') === pageId);
   });
 
-  // Если открыта не страница резюме, снимаем активность со вкладок участников
-  if (pageId !== 'resume') {
-    document.querySelectorAll('#member-tabs button').forEach(function(b){
-      b.classList.remove('active');
-    });
+  const memberTabs = document.getElementById('member-tabs');
+  if (pageId === 'resume') {
+    memberTabs.style.display = 'flex';
+  } else {
+    memberTabs.style.display = 'none';
+  }
+
+  if (pageId === 'task1') {
+    runTask1();
   }
 }
 
-// Переключение участника — автоматически открывает страницу резюме
 function showMember(targetId) {
   showPage('resume');
 
@@ -30,15 +47,8 @@ function showMember(targetId) {
   document.getElementById(targetId).classList.add('active');
 }
 
-// Привязка обработчиков событий к кнопкам навигации
 document.querySelectorAll('#navbar > button[data-page]').forEach(function(btn){
   btn.addEventListener('click', function(){
     showPage(btn.getAttribute('data-page'));
-  });
-});
-
-document.querySelectorAll('#member-tabs button').forEach(function(btn){
-  btn.addEventListener('click', function(){
-    showMember(btn.getAttribute('data-target'));
   });
 });
