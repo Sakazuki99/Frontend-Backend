@@ -1,44 +1,77 @@
-// Переключение страниц верхнего уровня: Главная / Резюме
-function showPage(pageId) {
-  document.querySelectorAll('.page').forEach(function(p){
-    p.classList.remove('active');
-  });
-  document.getElementById('page-' + pageId).classList.add('active');
+document.addEventListener('DOMContentLoaded', () => {
+  const pages = document.querySelectorAll('.page');
+  const navButtons = document.querySelectorAll('.navbar > button');
+  const memberTabs = document.querySelectorAll('#member-tabs button');
+  const panels = document.querySelectorAll('.panel');
 
-  document.querySelectorAll('#navbar > button[data-page]').forEach(function(b){
-    b.classList.toggle('active', b.getAttribute('data-page') === pageId);
+  function resetNavButtons() {
+    navButtons.forEach(btn => btn.classList.remove('active'));
+    memberTabs.forEach(btn => btn.classList.remove('active'));
+  }
+
+  navButtons.forEach(btn => {
+    btn.addEventListener('click', () => {
+      const pageId = `page-${btn.dataset.page}`;
+      
+      pages.forEach(page => {
+        page.classList.toggle('active', page.id === pageId);
+      });
+
+      resetNavButtons();
+      btn.classList.add('active');
+    });
   });
 
-  // Если открыта не страница резюме, снимаем активность со вкладок участников
-  if (pageId !== 'resume') {
-    document.querySelectorAll('#member-tabs button').forEach(function(b){
-      b.classList.remove('active');
+  window.showMember = function(memberId) {
+    pages.forEach(page => {
+      page.classList.toggle('active', page.id === 'page-resume');
+    });
+
+    resetNavButtons();
+    memberTabs.forEach(btn => {
+      btn.classList.toggle('active', btn.dataset.target === memberId);
+    });
+
+    panels.forEach(panel => {
+      panel.classList.toggle('active', panel.id === memberId);
+    });
+
+    window.location.hash = memberId;
+  };
+
+ц
+  memberTabs.forEach(btn => {
+    btn.addEventListener('click', () => {
+      showMember(btn.dataset.target);
+    });
+  });
+
+  const initialHash = window.location.hash.replace('#', '');
+  if (initialHash && document.getElementById(initialHash)) {
+    showMember(initialHash);
+  }
+
+  // Задание 2: Логика управления классами
+  const targetElement = document.getElementById('target-element');
+  const toggleBtn = document.getElementById('toggle-btn');
+  const classListOutput = document.getElementById('class-list-output');
+
+  function updateClassListInfo() {
+    const classes = Array.from(targetElement.classList);
+    const classString = classes.join(', ');
+
+    console.log('Текущий список классов элемента:', classes);
+
+    classListOutput.textContent = classString ? classString : '(Классы отсутствуют)';
+  }
+
+  if (targetElement && toggleBtn && classListOutput) {
+    updateClassListInfo();
+
+    toggleBtn.addEventListener('click', () => {
+      targetElement.classList.toggle('active');
+      
+      updateClassListInfo();
     });
   }
-}
-
-// Переключение участника — автоматически открывает страницу резюме
-function showMember(targetId) {
-  showPage('resume');
-
-  document.querySelectorAll('.panel').forEach(function(panel){
-    panel.classList.remove('active');
-  });
-  document.querySelectorAll('#member-tabs button').forEach(function(b){
-    b.classList.toggle('active', b.getAttribute('data-target') === targetId);
-  });
-  document.getElementById(targetId).classList.add('active');
-}
-
-// Привязка обработчиков событий к кнопкам навигации
-document.querySelectorAll('#navbar > button[data-page]').forEach(function(btn){
-  btn.addEventListener('click', function(){
-    showPage(btn.getAttribute('data-page'));
-  });
-});
-
-document.querySelectorAll('#member-tabs button').forEach(function(btn){
-  btn.addEventListener('click', function(){
-    showMember(btn.getAttribute('data-target'));
-  });
 });
