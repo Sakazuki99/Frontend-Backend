@@ -1,8 +1,4 @@
 function runTask1() {
-  document.querySelectorAll('.old-element').forEach(function (element) {
-    element.remove();
-  });
-
   const result = document.getElementById('task1-result');
   if (result && !result.querySelector('.editable-paragraph')) {
     const paragraph = document.createElement('p');
@@ -31,6 +27,12 @@ function createTask1NewDiv() {
   newDiv.className = 'new-div';
   newDiv.textContent = 'Я новый элемент';
   document.body.appendChild(newDiv);
+}
+
+function removeTask1OldElement() {
+  document.querySelectorAll('.old-element').forEach(function (element) {
+    element.remove();
+  });
 }
 
 function updateTask2ClassList() {
