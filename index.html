@@ -10,6 +10,7 @@
 
 <div class="wrap">
 
+  <!-- КОММИТ 1: Добавлена кнопка Задания 3 и кнопка переключения темы -->
   <nav class="navbar" id="navbar">
     <button class="active" data-page="home">Главная</button>
     <div class="nav-divider"></div>
@@ -17,6 +18,10 @@
     <div class="nav-divider"></div>
     <button data-page="task1">Задание 1</button>
     <button data-page="task2">Задание 2</button>
+    <button data-page="task3">Задание 3</button>
+    
+    <div class="nav-divider"></div>
+    <button id="theme-toggle-btn" class="theme-toggle" aria-label="Переключить темную тему">🌙 Темная</button>
     
     <div id="member-tabs" style="display: none;">
       <div class="nav-divider"></div>
@@ -102,6 +107,30 @@
       <div class="output-section">
         <h3>Список классов элемента:</h3>
         <p id="class-list-output" class="class-list-badge">Загрузка...</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- КОММИТ 1: Добавлена полноценная секция для Задания 3 -->
+  <section class="page" id="page-task3">
+    <div class="masthead">
+      <h1>Задание 3: Генератор таблицы и статистика</h1>
+      <p>Создание таблицы заданного размера, изменение цвета ячеек и подсчет</p>
+    </div>
+
+    <div class="task-box">
+      <div class="controls-group" style="margin-bottom: 20px; display: flex; gap: 12px; align-items: center; flex-wrap: wrap;">
+        <label>Строк: <input type="number" id="table-rows" min="1" max="20" value="3" style="padding: 6px; width: 60px;"></label>
+        <label>Столбцов: <input type="number" id="table-cols" min="1" max="20" value="3" style="padding: 6px; width: 60px;"></label>
+        <label>Цвет заливки: <input type="color" id="cell-color-picker" value="#3b82f6" style="border:none; width:40px; height:32px; cursor:pointer; background:none;"></label>
+        <button class="cta-btn" id="generate-table-btn" style="padding: 8px 16px; cursor:pointer;">Создать таблицу</button>
+      </div>
+
+      <div id="table-container" style="overflow-x: auto; margin-bottom: 20px;"></div>
+
+      <div class="output-section" style="background: var(--chip-bg); padding: 16px; border-radius: 8px;">
+        <h3>Статистика цветов:</h3>
+        <p id="color-stats-output">Кликните по ячейкам таблицы, чтобы изменить их цвет.</p>
       </div>
     </div>
   </section>
@@ -312,10 +341,7 @@
       <div id="target-element" class="task1-target">Исходный текст элемента.</div>
       <div class="old-element task1-old-element">Этот элемент будет удалён скриптом.</div>
       <div id="task1-result"></div>
-      <button class="cta" onclick="changeTargetText()" style="padding: 10px 16px; font-size: 14px;">Изменить текст</button>
-      <button class="cta" onclick="removeChangedElement()" style="padding: 10px 16px; font-size: 14px;">Удалить изменённый div</button>
       <button class="cta" onclick="createTask1NewDiv()" style="padding: 10px 16px; font-size: 14px;">Создать новый элемент</button>
-      <button class="cta" onclick="removeTask1OldElement()" style="padding: 10px 16px; font-size: 14px;">Удалить old-element</button>
     </div>
   </section>
 
