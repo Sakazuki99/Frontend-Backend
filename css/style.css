@@ -37,7 +37,7 @@ body{
   padding: 40px 24px 80px;
 }
 
-/* Навигация */
+
 .navbar{
   display: flex;
   align-items: center;
@@ -99,7 +99,7 @@ body{
   to{ opacity: 1; transform: translateY(0); }
 }
 
-/* Главная */
+
 .hero{
   margin-bottom: 72px;
 }
@@ -204,7 +204,7 @@ body{
   line-height: 1.4;
 }
 
-/* Резюме / Профили */
+
 .masthead{
   margin-bottom: 40px;
 }

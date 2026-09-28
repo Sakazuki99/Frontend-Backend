@@ -126,7 +126,7 @@ function hexToRgbString(hex) {
   return hex;
 }
 
-// КОММИТ 4: Логика темной темы и ее сохранения в localStorage (Задание 4)
+
 function initThemeToggle() {
   const themeBtn = document.getElementById('theme-toggle-btn');
   if (!themeBtn) return;
