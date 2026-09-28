@@ -45,6 +45,8 @@
   let rubikMoveHistory = [];
   let rubikMoveCount = 0;
   let rubikRotation = { x: -27, y: -34 };
+  let rubikRotationTarget = { ...rubikRotation };
+  let rubikViewAnimation = null;
 
   function initialize() {
     elements.memberTabs = document.getElementById('member-tabs');
@@ -142,8 +144,7 @@
         rotateRubikView(0, 18);
         break;
       case 'view-reset':
-        rubikRotation = { x: -27, y: -34 };
-        renderRubikView();
+        setRubikView({ x: -27, y: -34 });
         break;
     }
   }
@@ -336,6 +337,9 @@
     elements.rubikViewport.addEventListener('pointerdown', (event) => {
       if (event.button !== 0 && event.pointerType !== 'touch') return;
 
+      stopRubikViewAnimation();
+      rubikRotationTarget = { ...rubikRotation };
+
       pointer = {
         id: event.pointerId,
         x: event.clientX,
@@ -354,6 +358,7 @@
         x: Math.max(-85, Math.min(85, pointer.rotationX + (event.clientY - pointer.y) * -0.55)),
         y: pointer.rotationY + (event.clientX - pointer.x) * 0.55,
       };
+      rubikRotationTarget = { ...rubikRotation };
 
       renderRubikView();
     });
@@ -372,17 +377,73 @@
   }
 
   function rotateRubikView(deltaX, deltaY) {
-    rubikRotation = {
-      x: Math.max(-85, Math.min(85, rubikRotation.x + deltaX)),
-      y: rubikRotation.y + deltaY,
+    setRubikView({
+      x: Math.max(-85, Math.min(85, rubikRotationTarget.x + deltaX)),
+      y: rubikRotationTarget.y + deltaY,
+    });
+  }
+
+  function setRubikView(nextRotation) {
+    rubikRotationTarget = nextRotation;
+    stopRubikViewAnimation();
+
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+      rubikRotation = { ...rubikRotationTarget };
+      renderRubikView();
+      return;
+    }
+
+    const startRotation = { ...rubikRotation };
+    const targetRotation = { ...rubikRotationTarget };
+    const startedAt = performance.now();
+    const duration = 360;
+
+    const animate = (now) => {
+      const progress = Math.min((now - startedAt) / duration, 1);
+      const easing = 1 - Math.pow(1 - progress, 4);
+
+      rubikRotation = {
+        x: startRotation.x + (targetRotation.x - startRotation.x) * easing,
+        y: startRotation.y + (targetRotation.y - startRotation.y) * easing,
+      };
+      renderRubikView();
+
+      if (progress < 1) {
+        rubikViewAnimation = window.requestAnimationFrame(animate);
+      } else {
+        rubikRotation = targetRotation;
+        rubikViewAnimation = null;
+        renderRubikView();
+      }
     };
 
-    renderRubikView();
+    rubikViewAnimation = window.requestAnimationFrame(animate);
+  }
+
+  function stopRubikViewAnimation() {
+    if (rubikViewAnimation !== null) {
+      window.cancelAnimationFrame(rubikViewAnimation);
+      rubikViewAnimation = null;
+    }
   }
 
   function handleRubikKeyboard(event) {
     if (!document.getElementById('page-rubik')?.classList.contains('active')) return;
     if (event.target.closest('input, textarea, select, [contenteditable="true"]')) return;
+
+    const viewMoves = {
+      ArrowUp: [-12, 0],
+      ArrowDown: [12, 0],
+      ArrowLeft: [0, -18],
+      ArrowRight: [0, 18],
+    };
+    const viewMove = viewMoves[event.key];
+
+    if (viewMove) {
+      event.preventDefault();
+      rotateRubikView(...viewMove);
+      return;
+    }
 
     const face = event.key.toUpperCase();
     if (!rubikFaces.includes(face)) return;

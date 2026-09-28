@@ -950,6 +950,7 @@ input:focus-visible{
 }
 
 .cube-viewport{
+  position: relative;
   display: grid;
   min-height: 330px;
   place-items: center;
@@ -958,6 +959,20 @@ input:focus-visible{
   touch-action: none;
   cursor: grab;
   user-select: none;
+  isolation: isolate;
+}
+
+.cube-viewport::after{
+  position: absolute;
+  z-index: -1;
+  width: 190px;
+  height: 38px;
+  content: '';
+  border-radius: 50%;
+  background: rgba(45, 40, 115, 0.2);
+  filter: blur(13px);
+  transform: translateY(116px);
+  animation: cube-shadow-breathe 3.6s ease-in-out infinite;
 }
 
 .cube-viewport:active{
@@ -969,7 +984,7 @@ input:focus-visible{
   width: 174px;
   height: 174px;
   transform-style: preserve-3d;
-  transition: transform 0.06s linear;
+  will-change: transform;
 }
 
 .cube-face{
@@ -1029,11 +1044,21 @@ input:focus-visible{
 
 .rubik-view-controls{
   display: grid;
-  grid-template-columns: repeat(5, 38px);
+  grid-template:
+    '. up .' 38px
+    'left reset right' 38px
+    '. down .' 38px
+    / repeat(3, 38px);
   justify-content: center;
   gap: 7px;
   margin-top: 18px;
 }
+
+.rubik-icon-button--up{ grid-area: up; }
+.rubik-icon-button--left{ grid-area: left; }
+.rubik-icon-button--reset{ grid-area: reset; }
+.rubik-icon-button--right{ grid-area: right; }
+.rubik-icon-button--down{ grid-area: down; }
 
 .rubik-icon-button,
 .rubik-move-row button,
@@ -1455,6 +1480,17 @@ body{
 .chip{
   border: 1px solid var(--line);
   background: var(--accent-soft);
+}
+
+@keyframes cube-shadow-breathe{
+  0%, 100%{ opacity: 0.7; transform: translateY(116px) scaleX(0.88); }
+  50%{ opacity: 1; transform: translateY(116px) scaleX(1); }
+}
+
+@media (prefers-reduced-motion: reduce){
+  .cube-viewport::after{
+    animation: none;
+  }
 }
 
 .table-controls,
