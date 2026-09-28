@@ -32,7 +32,7 @@ body{
 }
 
 .wrap{
-  max-width: 780px;
+  text-align: center;
   margin: 0 auto;
   padding: 40px 24px 80px;
 }
@@ -82,6 +82,10 @@ body{
   display: flex;
   align-items: center;
   gap: 4px;
+}
+
+#member-tabs[hidden]{
+  display: none;
 }
 
 /* Секции страниц */
@@ -354,6 +358,60 @@ body{
 #table-container table {
   border-collapse: collapse;
   margin: 10px 0;
+}
+
+.table-controls{
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+.table-controls input[type="number"]{
+  width: 60px;
+  padding: 6px;
+}
+
+.table-controls input[type="color"]{
+  width: 40px;
+  height: 32px;
+  border: none;
+  background: none;
+  cursor: pointer;
+}
+
+.table-controls .cta-btn{
+  padding: 8px 16px;
+  cursor: pointer;
+}
+
+.table-container{
+  overflow-x: auto;
+  margin-bottom: 20px;
+}
+
+.table-output{
+  padding: 16px;
+  border-radius: 8px;
+  background: var(--chip-bg);
+}
+
+.color-stat{
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.color-stat__swatch{
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+}
+
+.task1-create-button{
+  padding: 10px 16px;
+  font-size: 14px;
 }
 
 #table-container td {

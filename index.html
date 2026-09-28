@@ -7,28 +7,25 @@
   <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
-
 <div class="wrap">
-
-  
   <nav class="navbar" id="navbar">
     <button class="active" data-page="home">Главная</button>
     <div class="nav-divider"></div>
-    <button data-page="resume" onclick="showMember('p1')">Резюме команды</button>
+    <button data-page="resume">Резюме команды</button>
     <div class="nav-divider"></div>
     <button data-page="task1">Задание 1</button>
     <button data-page="task2">Задание 2</button>
     <button data-page="task3">Задание 3</button>
     
     <div class="nav-divider"></div>
-    <button id="theme-toggle-btn" class="theme-toggle" aria-label="Переключить темную тему">🌙 Темная</button>
+    <button id="theme-toggle-btn" class="theme-toggle" data-action="toggle-theme" aria-label="Переключить темную тему">🌙 Темная</button>
     
-    <div id="member-tabs" style="display: none;">
+    <div id="member-tabs" hidden>
       <div class="nav-divider"></div>
-      <button data-target="p1" onclick="showMember('p1')">Ибрагим</button>
-      <button data-target="p2" onclick="showMember('p2')">Алиби</button>
-      <button data-target="p3" onclick="showMember('p3')">Нурболат</button>
-      <button data-target="p4" onclick="showMember('p4')">Алихан</button>
+      <button data-target="p1" data-member="p1">Ибрагим</button>
+      <button data-target="p2" data-member="p2">Алиби</button>
+      <button data-target="p3" data-member="p3">Нурболат</button>
+      <button data-target="p4" data-member="p4">Алихан</button>
     </div>
   </nav>
 
@@ -37,7 +34,7 @@
       <p class="kicker">Командный проект</p>
       <h1>Четыре человека, один проект</h1>
       <p>Здесь собрана информация о команде — кто мы, чем занимаемся и на каком этапе находится работа. Полный состав и профиль каждого участника — во вкладке «Резюме».</p>
-      <button class="cta" onclick="showMember('p1'); showPage('resume');">
+      <button class="cta" data-action="open-member" data-member="p1">
         Смотреть состав команды
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg>
       </button>
@@ -46,7 +43,7 @@
     <div class="roster">
       <p class="label">Участники</p>
       <div class="roster-grid">
-        <button class="roster-item" onclick="showMember('p1'); showPage('resume');">
+        <button class="roster-item" data-action="open-member" data-member="p1">
           <div class="avatar">
             <svg viewBox="0 0 100 100">
               <rect width="100" height="100" fill="#000"/>
@@ -56,7 +53,7 @@
           </div>
           <div class="name">Ибрагим</div>
         </button>
-        <button class="roster-item" onclick="showMember('p2'); showPage('resume');">
+        <button class="roster-item" data-action="open-member" data-member="p2">
           <div class="avatar">
             <svg viewBox="0 0 100 100">
               <rect width="100" height="100" fill="#000"/>
@@ -66,7 +63,7 @@
           </div>
           <div class="name">Алиби</div>
         </button>
-        <button class="roster-item" onclick="showMember('p3'); showPage('resume');">
+        <button class="roster-item" data-action="open-member" data-member="p3">
           <div class="avatar">
             <svg viewBox="0 0 100 100">
               <rect width="100" height="100" fill="#000"/>
@@ -76,7 +73,7 @@
           </div>
           <div class="name">Нурболат</div>
         </button>
-        <button class="roster-item" onclick="showMember('p4'); showPage('resume');">
+        <button class="roster-item" data-action="open-member" data-member="p4">
           <div class="avatar">
             <svg viewBox="0 0 100 100">
               <rect width="100" height="100" fill="#000"/>
@@ -101,7 +98,7 @@
       </div>
 
       <div class="actions">
-        <button id="toggle-btn" class="cta-btn">Переключить класс active</button>
+        <button id="toggle-btn" class="cta-btn" data-action="toggle-task2-class">Переключить класс active</button>
       </div>
 
       <div class="output-section">
@@ -119,16 +116,16 @@
     </div>
 
     <div class="task-box">
-      <div class="controls-group" style="margin-bottom: 20px; display: flex; gap: 12px; align-items: center; flex-wrap: wrap;">
-        <label>Строк: <input type="number" id="table-rows" min="1" max="20" value="3" style="padding: 6px; width: 60px;"></label>
-        <label>Столбцов: <input type="number" id="table-cols" min="1" max="20" value="3" style="padding: 6px; width: 60px;"></label>
-        <label>Цвет заливки: <input type="color" id="cell-color-picker" value="#3b82f6" style="border:none; width:40px; height:32px; cursor:pointer; background:none;"></label>
-        <button class="cta-btn" id="generate-table-btn" style="padding: 8px 16px; cursor:pointer;">Создать таблицу</button>
+      <div class="controls-group table-controls">
+        <label>Строк: <input type="number" id="table-rows" min="1" max="20" value="3"></label>
+        <label>Столбцов: <input type="number" id="table-cols" min="1" max="20" value="3"></label>
+        <label>Цвет заливки: <input type="color" id="cell-color-picker" value="#3b82f6"></label>
+        <button class="cta-btn" data-action="generate-table">Создать таблицу</button>
       </div>
 
-      <div id="table-container" style="overflow-x: auto; margin-bottom: 20px;"></div>
+      <div id="table-container" class="table-container"></div>
 
-      <div class="output-section" style="background: var(--chip-bg); padding: 16px; border-radius: 8px;">
+      <div class="output-section table-output">
         <h3>Статистика цветов:</h3>
         <p id="color-stats-output">Кликните по ячейкам таблицы, чтобы изменить их цвет.</p>
       </div>
@@ -341,7 +338,7 @@
       <div id="target-element" class="task1-target">Исходный текст элемента.</div>
       <div class="old-element task1-old-element">Этот элемент будет удалён скриптом.</div>
       <div id="task1-result"></div>
-      <button class="cta" onclick="createTask1NewDiv()" style="padding: 10px 16px; font-size: 14px;">Создать новый элемент</button>
+      <button class="cta task1-create-button" data-action="create-task1-element">Создать новый элемент</button>
     </div>
   </section>
 
