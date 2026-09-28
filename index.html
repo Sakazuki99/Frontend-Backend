@@ -20,6 +20,7 @@
     <div class="nav-divider"></div>
     <button id="theme-toggle-btn" class="theme-toggle" data-action="toggle-theme" aria-label="Переключить темную тему">🌙 Темная</button>
     
+    <button data-page="rubik">Кубик Рубика</button>
     <div id="member-tabs" hidden>
       <div class="nav-divider"></div>
       <button data-target="p1" data-member="p1">Ибрагим</button>
@@ -342,6 +343,61 @@
     </div>
   </section>
 
+  <section class="page" id="page-rubik">
+    <header class="masthead">
+      <h1>Кубик Рубика</h1>
+      <p>Виртуальный куб 3×3. Перемешивай его и собирай своими алгоритмами.</p>
+    </header>
+
+    <div class="rubik-layout">
+      <section class="rubik-stage-panel" aria-label="Виртуальный куб">
+        <div class="cube-viewport" id="cube-viewport">
+          <div class="rubiks-cube" id="rubiks-cube" aria-label="Кубик Рубика 3 на 3"></div>
+        </div>
+        <p class="rubik-view-hint">Зажми и перетаскивай куб, чтобы осмотреть его со всех сторон</p>
+        <div class="rubik-view-controls" aria-label="Поворот обзора">
+          <button class="rubik-icon-button" data-action="view-up" aria-label="Повернуть вверх">↑</button>
+          <button class="rubik-icon-button" data-action="view-left" aria-label="Повернуть влево">←</button>
+          <button class="rubik-icon-button" data-action="view-reset" aria-label="Сбросить обзор">⟳</button>
+          <button class="rubik-icon-button" data-action="view-right" aria-label="Повернуть вправо">→</button>
+          <button class="rubik-icon-button" data-action="view-down" aria-label="Повернуть вниз">↓</button>
+        </div>
+      </section>
+
+      <section class="rubik-control-panel" aria-label="Управление кубиком">
+        <div class="rubik-toolbar">
+          <button class="cta-btn" data-action="rubik-scramble">Перемешать</button>
+          <button class="rubik-secondary-button" data-action="rubik-undo" id="rubik-undo" disabled>Отменить ход</button>
+          <button class="rubik-secondary-button" data-action="rubik-reset">Сбросить</button>
+        </div>
+
+        <div class="rubik-status-row">
+          <div><span class="rubik-status-label">ХОДЫ</span><strong id="rubik-move-count">0</strong></div>
+          <span class="rubik-status-indicator"><span></span><span id="rubik-state-label">Готов к сборке</span></span>
+        </div>
+
+        <div class="rubik-move-section">
+          <h2>Повороты граней</h2>
+          <p>Выбери грань и направление поворота</p>
+          <div class="rubik-move-grid">
+            <div class="rubik-move-row"><span>U · верх</span><button data-action="rubik-move" data-move="U">U</button><button data-action="rubik-move" data-move="U'">U′</button><button data-action="rubik-move" data-move="U2">U2</button></div>
+            <div class="rubik-move-row"><span>R · правая</span><button data-action="rubik-move" data-move="R">R</button><button data-action="rubik-move" data-move="R'">R′</button><button data-action="rubik-move" data-move="R2">R2</button></div>
+            <div class="rubik-move-row"><span>F · передняя</span><button data-action="rubik-move" data-move="F">F</button><button data-action="rubik-move" data-move="F'">F′</button><button data-action="rubik-move" data-move="F2">F2</button></div>
+            <div class="rubik-move-row"><span>D · нижняя</span><button data-action="rubik-move" data-move="D">D</button><button data-action="rubik-move" data-move="D'">D′</button><button data-action="rubik-move" data-move="D2">D2</button></div>
+            <div class="rubik-move-row"><span>L · левая</span><button data-action="rubik-move" data-move="L">L</button><button data-action="rubik-move" data-move="L'">L′</button><button data-action="rubik-move" data-move="L2">L2</button></div>
+            <div class="rubik-move-row"><span>B · задняя</span><button data-action="rubik-move" data-move="B">B</button><button data-action="rubik-move" data-move="B'">B′</button><button data-action="rubik-move" data-move="B2">B2</button></div>
+          </div>
+        </div>
+
+        <div class="rubik-history-section">
+          <div class="rubik-history-heading"><h2>Последовательность</h2><button data-action="rubik-clear-history">Очистить</button></div>
+          <div class="rubik-history" id="rubik-history" aria-live="polite">Ходы появятся здесь</div>
+        </div>
+
+        <p class="rubik-keyboard-hint">Клавиши U R F D L B — поворот по часовой. Shift + клавиша — обратный.</p>
+      </section>
+    </div>
+  </section>
 </div>
 
 <script src="js/script.js"></script>
