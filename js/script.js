@@ -1,4 +1,13 @@
 function runTask1() {
+  const targetElement = document.getElementById('target-element');
+  if (targetElement) {
+    targetElement.textContent = 'Привет, мир!';
+  }
+
+  document.querySelectorAll('.old-element').forEach(function (element) {
+    element.remove();
+  });
+
   const result = document.getElementById('task1-result');
   if (result && !result.querySelector('.editable-paragraph')) {
     const paragraph = document.createElement('p');
@@ -8,20 +17,6 @@ function runTask1() {
       paragraph.classList.toggle('is-changed');
     });
     result.appendChild(paragraph);
-  }
-}
-
-function changeTargetText() {
-  const targetElement = document.getElementById('target-element');
-  if (targetElement) {
-    targetElement.textContent = 'Привет, мир!';
-  }
-}
-
-function removeChangedElement() {
-  const targetElement = document.getElementById('target-element');
-  if (targetElement) {
-    targetElement.remove();
   }
 }
 
@@ -36,12 +31,6 @@ function createTask1NewDiv() {
   document.body.appendChild(newDiv);
 }
 
-function removeTask1OldElement() {
-  document.querySelectorAll('.old-element').forEach(function (element) {
-    element.remove();
-  });
-}
-
 function updateTask2ClassList() {
   const targetElement = document.getElementById('task2-target-element');
   const output = document.getElementById('class-list-output');
@@ -50,8 +39,119 @@ function updateTask2ClassList() {
   }
 
   const classes = Array.from(targetElement.classList);
-  console.log('Список классов элемента:', classes);
   output.textContent = classes.length ? classes.join(', ') : '(классы отсутствуют)';
+}
+
+// КОММИТ 3: Логика генерации таблицы и подсчета цветов (Задание 3)
+function initTask3() {
+  const generateBtn = document.getElementById('generate-table-btn');
+  if (!generateBtn) return;
+
+  generateBtn.addEventListener('click', () => {
+    const rowsInput = document.getElementById('table-rows');
+    const colsInput = document.getElementById('table-cols');
+    const container = document.getElementById('table-container');
+
+    const rows = parseInt(rowsInput.value) || 3;
+    const cols = parseInt(colsInput.value) || 3;
+
+    container.innerHTML = '';
+    const table = document.createElement('table');
+
+    for (let i = 0; i < rows; i++) {
+      const tr = document.createElement('tr');
+      for (let j = 0; j < cols; j++) {
+        const td = document.createElement('td');
+        
+        td.addEventListener('click', () => {
+          const colorPicker = document.getElementById('cell-color-picker');
+          const selectedColor = colorPicker ? colorPicker.value : '#3b82f6';
+          
+          td.style.backgroundColor = td.style.backgroundColor === hexToRgbString(selectedColor) ? '' : selectedColor;
+          updateColorStats();
+        });
+
+        tr.appendChild(td);
+      }
+      table.appendChild(tr);
+    }
+
+    container.appendChild(table);
+    updateColorStats();
+  });
+
+  generateBtn.click();
+}
+
+function updateColorStats() {
+  const table = document.querySelector('#table-container table');
+  const output = document.getElementById('color-stats-output');
+  if (!table || !output) return;
+
+  const cells = table.querySelectorAll('td');
+  const colorCounts = {};
+  let totalColored = 0;
+
+  cells.forEach(cell => {
+    const bg = cell.style.backgroundColor;
+    if (bg && bg !== '' && bg !== 'transparent') {
+      colorCounts[bg] = (colorCounts[bg] || 0) + 1;
+      totalColored++;
+    }
+  });
+
+  if (totalColored === 0) {
+    output.textContent = 'Нет закрашенных ячеек. Кликните по любой ячейке.';
+    return;
+  }
+
+  let statsText = `Всего закрашено ячеек: ${totalColored}. По цветам: `;
+  const details = [];
+  for (const [color, count] of Object.entries(colorCounts)) {
+    details.push(`<span style="display:inline-block;width:12px;height:12px;background:${color};border-radius:50%;vertical-align:middle;margin-right:4px;"></span>${color}: ${count}`);
+  }
+  output.innerHTML = statsText + details.join(' | ');
+}
+
+function hexToRgbString(hex) {
+  let c;
+  if(/^#([A-Fa-f0-9]{3}){1,2}$/.test(hex)){
+    c = hex.substring(1).split('');
+    if(c.length === 3){
+      c = [c[0], c[0], c[1], c[1], c[2], c[2]];
+    }
+    c = '0x' + c.join('');
+    return `rgb(${[(c>>16)&255, (c>>8)&255, c&255].join(', ')})`;
+  }
+  return hex;
+}
+
+// КОММИТ 4: Логика темной темы и ее сохранения в localStorage (Задание 4)
+function initThemeToggle() {
+  const themeBtn = document.getElementById('theme-toggle-btn');
+  if (!themeBtn) return;
+
+  const savedTheme = localStorage.getItem('theme') || 'light';
+  if (savedTheme === 'dark') {
+    document.documentElement.setAttribute('data-theme', 'dark');
+    themeBtn.textContent = '☀️ Светлая';
+  } else {
+    document.documentElement.setAttribute('data-theme', 'light');
+    themeBtn.textContent = '🌙 Темная';
+  }
+
+  themeBtn.addEventListener('click', () => {
+    const currentTheme = document.documentElement.getAttribute('data-theme');
+    if (currentTheme === 'dark') {
+      document.documentElement.setAttribute('data-theme', 'light');
+      localStorage.setItem('theme', 'light');
+      themeBtn.textContent = '🌙 Темная';
+    } else {
+      document.documentElement.setAttribute('data-theme', 'dark');
+      localStorage.setItem('theme', 'dark');
+      themeBtn.textContent = '☀️ Светлая';
+    }
+  });
 }
 
 function showPage(pageId) {
@@ -75,6 +175,8 @@ function showPage(pageId) {
 
   if (pageId === 'task1') {
     runTask1();
+  } else if (pageId === 'task3') {
+    initTask3();
   }
 }
 
@@ -91,6 +193,8 @@ function showMember(memberId) {
 }
 
 document.addEventListener('DOMContentLoaded', function () {
+  initThemeToggle(); 
+
   document.querySelectorAll('#navbar > button[data-page]').forEach(function (button) {
     button.addEventListener('click', function () {
       showPage(button.dataset.page);
@@ -101,11 +205,7 @@ document.addEventListener('DOMContentLoaded', function () {
   const task2Target = document.getElementById('task2-target-element');
   if (toggleButton && task2Target) {
     toggleButton.addEventListener('click', function () {
-      if (task2Target.classList.contains('active')) {
-        task2Target.classList.remove('active');
-      } else {
-        task2Target.classList.add('active');
-      }
+      task2Target.classList.toggle('active');
       updateTask2ClassList();
     });
   }
