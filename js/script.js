@@ -65,12 +65,16 @@
     elements.rubikHistory = document.getElementById('rubik-history');
     elements.rubikMoveCount = document.getElementById('rubik-move-count');
     elements.rubikStateLabel = document.getElementById('rubik-state-label');
+    elements.todoCount = document.getElementById('todo-count');
+    elements.todoList = document.getElementById('todo-list');
+    elements.todoDetails = document.getElementById('todo-details');
 
     initializeTheme();
     initializeTask1();
     initializeTask3();
     initializeRubik();
     updateTask2ClassList();
+    loadTodos();
 
     document.addEventListener('click', handleClick);
     document.addEventListener('keydown', handleRubikKeyboard);
@@ -115,6 +119,12 @@
         break;
       case 'generate-table':
         generateTable();
+        break;
+      case 'todos-refresh':
+        loadTodos();
+        break;
+      case 'todo-open':
+        showTodoDetails(control.dataset.id);
         break;
       case 'rubik-move':
         performRubikMove(control.dataset.move);
@@ -182,6 +192,67 @@
       button.classList.toggle('active', isActive);
       button.setAttribute('aria-pressed', String(isActive));
     });
+  }
+
+  async function loadTodos() {
+    if (!elements.todoList || !window.fakeTodoApi) return;
+
+    elements.todoCount.textContent = 'Загрузка задач…';
+    elements.todoList.replaceChildren();
+    try {
+      const todos = await window.fakeTodoApi.getAll();
+      elements.todoCount.textContent = `Всего задач: ${todos.length}`;
+      if (todos.length === 0) {
+        elements.todoList.textContent = 'Список задач пуст.';
+        return;
+      }
+
+      todos.forEach((todo) => {
+        const card = document.createElement('article');
+        card.className = 'todo-card';
+        const title = document.createElement('h2');
+        title.textContent = todo.todo;
+        const status = document.createElement('p');
+        status.className = `todo-status${todo.completed ? ' is-complete' : ''}`;
+        status.textContent = todo.completed ? 'Выполнена' : 'Не выполнена';
+        const button = document.createElement('button');
+        button.type = 'button';
+        button.className = 'todo-open-button';
+        button.dataset.action = 'todo-open';
+        button.dataset.id = todo.id;
+        button.textContent = `Открыть задачу #${todo.id}`;
+        card.append(title, status, button);
+        elements.todoList.append(card);
+      });
+    } catch (error) {
+      elements.todoCount.textContent = 'Не удалось загрузить задачи.';
+      elements.todoList.textContent = error.message;
+    }
+  }
+
+  async function showTodoDetails(id) {
+    if (!elements.todoDetails || !window.fakeTodoApi) return;
+
+    elements.todoDetails.textContent = 'Загрузка задачи…';
+    try {
+      const todo = await window.fakeTodoApi.getById(id);
+      if (!todo) {
+        elements.todoDetails.textContent = `Задача с ID ${id} не найдена.`;
+        return;
+      }
+
+      const heading = document.createElement('h2');
+      heading.textContent = `Задача #${todo.id}`;
+      const description = document.createElement('p');
+      description.textContent = todo.todo;
+      const status = document.createElement('p');
+      status.textContent = `Статус: ${todo.completed ? 'выполнена' : 'не выполнена'}`;
+      const owner = document.createElement('p');
+      owner.textContent = `Пользователь: ${todo.userId}`;
+      elements.todoDetails.replaceChildren(heading, description, status, owner);
+    } catch (error) {
+      elements.todoDetails.textContent = `Не удалось получить задачу: ${error.message}`;
+    }
   }
 // ..........................................
   function initializeTask1() {

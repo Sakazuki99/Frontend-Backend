@@ -16,6 +16,7 @@
     <button data-page="task1">Задание 1</button>
     <button data-page="task2">Задание 2</button>
     <button data-page="task3">Задание 3</button>
+    <button data-page="todos">Менеджер задач</button>
     
     <div class="nav-divider"></div>
     <button id="theme-toggle-btn" class="theme-toggle" data-action="toggle-theme" aria-label="Переключить темную тему">🌙 Темная</button>
@@ -106,6 +107,23 @@
         <h3>Список классов элемента:</h3>
         <p id="class-list-output" class="class-list-badge">Загрузка...</p>
       </div>
+    </div>
+  </section>
+
+  <section class="page" id="page-todos">
+    <div class="masthead">
+      <h1>Менеджер задач</h1>
+      <p>Данные загружаются из фейкового API. Выберите задачу, чтобы получить её по ID.</p>
+    </div>
+    <div class="task-box todo-manager">
+      <div class="todo-toolbar">
+        <p id="todo-count" class="todo-count" aria-live="polite">Загрузка задач…</p>
+        <button class="cta-btn" data-action="todos-refresh">Обновить список</button>
+      </div>
+      <div id="todo-list" class="todo-list" aria-live="polite"></div>
+      <section id="todo-details" class="todo-details" aria-live="polite" aria-label="Подробности задачи">
+        <p>Выберите задачу из списка.</p>
+      </section>
     </div>
   </section>
 
@@ -400,6 +418,7 @@
   </section>
 </div>
 
+<script src="js/fake-api.js"></script>
 <script src="js/script.js"></script>
 </body>
 </html>
