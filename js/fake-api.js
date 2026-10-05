@@ -32,6 +32,16 @@
     return { ...createdTodo };
   }
 
+  function removeTodo(id) {
+    const todoIndex = todos.findIndex((item) => item.id === Number(id));
+    if (todoIndex === -1) {
+      throw new Error(`Todo with ID ${id} was not found.`);
+    }
+
+    const [deletedTodo] = todos.splice(todoIndex, 1);
+    return { ...deletedTodo };
+  }
+
   window.fakeTodoApi = Object.freeze({
     async getAll() {
       return todos.map((todo) => ({ ...todo }));
@@ -54,6 +64,14 @@
       const updatedTodo = { ...todos[todoIndex], ...fields, id: todos[todoIndex].id };
       todos[todoIndex] = updatedTodo;
       return { ...updatedTodo };
+    },
+
+    async remove(id) {
+      return removeTodo(id);
+    },
+
+    async delete(id) {
+      return removeTodo(id);
     },
 
     async create(input) {
