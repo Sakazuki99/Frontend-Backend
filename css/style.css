@@ -1514,6 +1514,46 @@ body{
   background: var(--card-bg);
 }
 
+.todo-card{
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+}
+
+.todo-card.is-selected{
+  border-color: var(--accent);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent) 18%, transparent);
+}
+
+.todo-empty{
+  grid-column: 1 / -1;
+  margin: 0;
+  padding: 16px;
+  border: 1px dashed var(--line);
+  border-radius: 10px;
+  color: var(--ink-soft);
+}
+
+.todo-notice{
+  margin: 0;
+  color: var(--ink-soft);
+  font-size: 14px;
+}
+
+.todo-notice:empty{
+  display: none;
+}
+
+.todo-notice.is-success{
+  color: var(--success);
+}
+
+.todo-notice.is-error,
+.todo-open-button.todo-delete-button{
+  color: var(--danger, #b42318);
+}
+
 .todo-card h2,
 .todo-details h2{
   margin: 0 0 10px;
@@ -1552,8 +1592,7 @@ body{
   gap: 6px;
 }
 
-.todo-form .todo-open-button,
-.todo-card .todo-open-button{
+.todo-form .todo-open-button{
   margin: 0 6px 6px 0;
 }
 
@@ -1586,6 +1625,19 @@ body{
 
 .todo-open-button:hover{
   border-color: var(--accent);
+}
+
+.todo-open-button:focus-visible,
+.todo-form input:focus-visible,
+.todo-toolbar button:focus-visible{
+  outline: 3px solid color-mix(in srgb, var(--accent) 45%, transparent);
+  outline-offset: 2px;
+}
+
+.todo-open-button:disabled,
+.todo-toolbar button:disabled{
+  cursor: wait;
+  opacity: 0.65;
 }
 
 .todo-details{
