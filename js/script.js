@@ -89,6 +89,7 @@
     loadTodos();
 
     document.addEventListener('click', handleClick);
+    document.addEventListener('change', handleTodoChange);
     document.addEventListener('submit', handleTodoSubmit);
     document.addEventListener('keydown', handleRubikKeyboard);
     elements.todoSearch?.addEventListener('input', () => {
@@ -99,6 +100,11 @@
       todoPage = 1;
       renderTodos();
     });
+  }
+
+  function handleTodoChange(event) {
+    const checkbox = event.target.closest('input[data-action="todo-toggle"]');
+    if (checkbox) toggleTodo(checkbox.dataset.id, checkbox);
   }
 
   function handleClick(event) {
@@ -146,9 +152,6 @@
         break;
       case 'todo-create-toggle':
         toggleCreateTodoForm();
-        break;
-      case 'todo-toggle':
-        toggleTodo(control.dataset.id, control);
         break;
       case 'todo-edit':
         toggleTodoEdit(control.dataset.id);
@@ -327,9 +330,16 @@
     const meta = document.createElement('p');
     meta.className = 'todo-meta';
     meta.textContent = `#${todo.id} · Пользователь ${todo.userId}`;
-    const status = document.createElement('span');
-    status.className = `todo-status${todo.completed ? ' is-complete' : ''}`;
-    status.textContent = todo.completed ? 'Выполнена' : 'В работе';
+    const status = document.createElement('label');
+    status.className = `todo-status todo-checkbox-status${todo.completed ? ' is-complete' : ''}`;
+    const statusCheckbox = document.createElement('input');
+    statusCheckbox.type = 'checkbox';
+    statusCheckbox.dataset.action = 'todo-toggle';
+    statusCheckbox.dataset.id = todoId;
+    statusCheckbox.checked = todo.completed;
+    statusCheckbox.disabled = isPending || isEditing;
+    statusCheckbox.setAttribute('aria-label', '\u0418\u0437\u043c\u0435\u043d\u0438\u0442\u044c \u0441\u0442\u0430\u0442\u0443\u0441 \u0437\u0430\u0434\u0430\u0447\u0438');
+    status.append(statusCheckbox, document.createTextNode(todo.completed ? ' \u0412\u044b\u043f\u043e\u043b\u043d\u0435\u043d\u0430' : ' \u0412 \u0440\u0430\u0431\u043e\u0442\u0435'));
 
     const actions = document.createElement('div');
     actions.className = 'todo-actions';
@@ -341,13 +351,6 @@
     editButton.disabled = isPending;
     editButton.textContent = isEditing ? 'Закрыть' : 'Изменить';
 
-    const toggleButton = document.createElement('button');
-    toggleButton.type = 'button';
-    toggleButton.className = 'todo-open-button';
-    toggleButton.dataset.action = 'todo-toggle';
-    toggleButton.dataset.id = todoId;
-    toggleButton.disabled = isPending || isEditing;
-    toggleButton.textContent = isPending ? 'Сохраняем…' : (todo.completed ? 'Вернуть в работу' : 'Завершить');
 
     const deleteButton = document.createElement('button');
     deleteButton.type = 'button';
@@ -355,8 +358,10 @@
     deleteButton.dataset.action = 'todo-delete';
     deleteButton.dataset.id = todoId;
     deleteButton.disabled = isPending || isEditing;
-    deleteButton.textContent = 'Удалить';
-    actions.append(editButton, toggleButton, deleteButton);
+    deleteButton.textContent = '\u00d7';
+    deleteButton.setAttribute('aria-label', '\u0423\u0434\u0430\u043b\u0438\u0442\u044c \u0437\u0430\u0434\u0430\u0447\u0443');
+    deleteButton.title = '\u0423\u0434\u0430\u043b\u0438\u0442\u044c \u0437\u0430\u0434\u0430\u0447\u0443';
+    actions.append(editButton, deleteButton);
     card.append(heading, meta, status, actions);
 
     if (isEditing) card.append(createTodoEditForm(todo, todoEditDrafts.get(todoId)));
@@ -518,7 +523,7 @@
     try {
       const todo = allTodos.find((item) => item.id === Number(id));
       if (!todo) return;
-      const updatedTodo = await window.fakeTodoApi.update(id, { completed: !todo.completed });
+      const updatedTodo = await window.fakeTodoApi.update(id, { completed: button.checked });
       allTodos = allTodos.map((item) => item.id === updatedTodo.id ? updatedTodo : item);
       const listUpdated = await loadTodos();
       setTodoNotice(
@@ -540,7 +545,6 @@
     if (!window.confirm(`Удалить задачу ${taskLabel}?`)) return;
     pendingTodoIds.add(String(id));
     button.disabled = true;
-    button.textContent = 'Удаляем…';
     try {
       await window.fakeTodoApi.delete(id);
       allTodos = allTodos.filter((todo) => todo.id !== Number(id));
