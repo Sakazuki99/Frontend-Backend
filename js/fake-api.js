@@ -42,6 +42,20 @@
       return todo ? { ...todo } : null;
     },
 
+    async update(id, fields) {
+      const todoIndex = todos.findIndex((item) => item.id === Number(id));
+      if (todoIndex === -1) {
+        throw new Error(`Todo with ID ${id} was not found.`);
+      }
+      if (!fields || typeof fields !== 'object' || Array.isArray(fields)) {
+        throw new TypeError('Update fields must be an object.');
+      }
+
+      const updatedTodo = { ...todos[todoIndex], ...fields, id: todos[todoIndex].id };
+      todos[todoIndex] = updatedTodo;
+      return { ...updatedTodo };
+    },
+
     async create(input) {
       return createTodo(input);
     },
