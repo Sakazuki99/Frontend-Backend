@@ -116,7 +116,14 @@
       <p>Задачи загружаются из DummyJSON. Добавление, изменение и удаление имитируются API и не сохраняются на сервере — изменения остаются до перезагрузки страницы.</p>
     </div>
     <div class="task-box todo-manager">
-      <form class="todo-form todo-create-form" data-todo-form="create">
+      <div class="todo-toolbar">
+        <p id="todo-count" class="todo-count" aria-live="polite">Загрузка задач…</p>
+        <div class="todo-toolbar-actions">
+          <button class="cta-btn" type="button" data-action="todo-create-toggle" aria-expanded="false" aria-controls="todo-create-form">Добавить задачу</button>
+          <button class="cta-btn" type="button" data-action="todos-refresh">Обновить</button>
+        </div>
+      </div>
+      <form id="todo-create-form" class="todo-form todo-create-form" data-todo-form="create" hidden>
         <label>Название задачи
           <input name="todo" type="text" required maxlength="200" placeholder="Например, проверить CRUD">
         </label>
@@ -128,15 +135,23 @@
         </label>
         <button class="todo-open-button" type="submit">Добавить задачу</button>
       </form>
-      <div class="todo-toolbar">
-        <p id="todo-count" class="todo-count" aria-live="polite">Загрузка задач…</p>
-        <button class="cta-btn" data-action="todos-refresh">Обновить список</button>
+      <div class="todo-filters">
+        <label for="todo-search">Поиск задач</label>
+        <input id="todo-search" type="search" placeholder="Название, ID задачи или пользователя">
+        <label for="todo-filter">Статус</label>
+        <select id="todo-filter">
+          <option value="all">Все задачи</option>
+          <option value="active">В работе</option>
+          <option value="completed">Выполненные</option>
+        </select>
       </div>
       <p id="todo-notice" class="todo-notice" role="status" aria-live="polite"></p>
       <div id="todo-list" class="todo-list" aria-live="polite"></div>
-      <section id="todo-details" class="todo-details" aria-live="polite" aria-label="Подробности задачи">
-        <p>Выберите задачу из списка.</p>
-      </section>
+      <nav id="todo-pagination" class="todo-pagination" aria-label="Страницы задач" hidden>
+        <button class="todo-open-button" type="button" data-action="todo-page" data-direction="-1">Назад</button>
+        <span data-page-label aria-live="polite">Страница 1</span>
+        <button class="todo-open-button" type="button" data-action="todo-page" data-direction="1">Дальше</button>
+      </nav>
     </div>
   </section>
 
