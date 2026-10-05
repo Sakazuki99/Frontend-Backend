@@ -10,6 +10,28 @@
 
   const todos = initialTodos.map((todo) => ({ ...todo }));
 
+  function createTodo(input) {
+    if (!input || typeof input !== 'object' || Array.isArray(input)) {
+      throw new TypeError('Для создания задачи передайте объект.');
+    }
+
+    const title = typeof input.todo === 'string' ? input.todo.trim() : '';
+    if (!title) {
+      throw new TypeError('Название задачи должно быть непустой строкой.');
+    }
+
+    const nextId = todos.reduce((maxId, todo) => Math.max(maxId, todo.id), 0) + 1;
+    const createdTodo = {
+      id: nextId,
+      todo: title,
+      completed: typeof input.completed === 'boolean' ? input.completed : false,
+      userId: Number.isInteger(input.userId) && input.userId > 0 ? input.userId : 1,
+    };
+
+    todos.push(createdTodo);
+    return { ...createdTodo };
+  }
+
   window.fakeTodoApi = Object.freeze({
     async getAll() {
       return todos.map((todo) => ({ ...todo }));
@@ -18,6 +40,10 @@
     async getById(id) {
       const todo = todos.find((item) => item.id === Number(id));
       return todo ? { ...todo } : null;
+    },
+
+    async create(input) {
+      return createTodo(input);
     },
   });
 })();
