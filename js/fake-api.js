@@ -10,22 +10,47 @@
 
   const todos = initialTodos.map((todo) => ({ ...todo }));
 
-  function createTodo(input) {
+  function validateTodoFields(input) {
     if (!input || typeof input !== 'object' || Array.isArray(input)) {
-      throw new TypeError('Для создания задачи передайте объект.');
+      throw new TypeError('Передайте объект с полями задачи.');
     }
 
-    const title = typeof input.todo === 'string' ? input.todo.trim() : '';
-    if (!title) {
-      throw new TypeError('Название задачи должно быть непустой строкой.');
+    const fields = {};
+    if (Object.hasOwn(input, 'todo')) {
+      if (typeof input.todo !== 'string' || !input.todo.trim()) {
+        throw new TypeError('Название задачи должно быть непустой строкой.');
+      }
+      fields.todo = input.todo.trim();
     }
 
+    if (Object.hasOwn(input, 'completed')) {
+      if (typeof input.completed !== 'boolean') {
+        throw new TypeError('Статус completed должен быть boolean.');
+      }
+      fields.completed = input.completed;
+    }
+
+    if (Object.hasOwn(input, 'userId')) {
+      if (!Number.isInteger(input.userId) || input.userId < 1) {
+        throw new TypeError('userId должен быть положительным целым числом.');
+      }
+      fields.userId = input.userId;
+    }
+
+    return fields;
+  }
+
+  function createTodo(input) {
+    const fields = validateTodoFields(input);
+    if (!Object.hasOwn(fields, 'todo')) {
+      throw new TypeError('Для создания задачи укажите название todo.');
+    }
     const nextId = todos.reduce((maxId, todo) => Math.max(maxId, todo.id), 0) + 1;
     const createdTodo = {
       id: nextId,
-      todo: title,
-      completed: typeof input.completed === 'boolean' ? input.completed : false,
-      userId: Number.isInteger(input.userId) && input.userId > 0 ? input.userId : 1,
+      todo: fields.todo,
+      completed: fields.completed ?? false,
+      userId: fields.userId ?? 1,
     };
 
     todos.push(createdTodo);
@@ -42,6 +67,21 @@
     return { ...deletedTodo };
   }
 
+  function updateTodo(id, input) {
+    const todoIndex = todos.findIndex((item) => item.id === Number(id));
+    if (todoIndex === -1) {
+      throw new Error(`Задача с ID ${id} не найдена.`);
+    }
+
+    const fields = validateTodoFields(input);
+    if (Object.keys(fields).length === 0) {
+      throw new TypeError('Укажите хотя бы одно поле для обновления.');
+    }
+
+    todos[todoIndex] = { ...todos[todoIndex], ...fields };
+    return { ...todos[todoIndex] };
+  }
+
   window.fakeTodoApi = Object.freeze({
     async getAll() {
       return todos.map((todo) => ({ ...todo }));
@@ -53,17 +93,7 @@
     },
 
     async update(id, fields) {
-      const todoIndex = todos.findIndex((item) => item.id === Number(id));
-      if (todoIndex === -1) {
-        throw new Error(`Todo with ID ${id} was not found.`);
-      }
-      if (!fields || typeof fields !== 'object' || Array.isArray(fields)) {
-        throw new TypeError('Update fields must be an object.');
-      }
-
-      const updatedTodo = { ...todos[todoIndex], ...fields, id: todos[todoIndex].id };
-      todos[todoIndex] = updatedTodo;
-      return { ...updatedTodo };
+      return updateTodo(id, fields);
     },
 
     async remove(id) {

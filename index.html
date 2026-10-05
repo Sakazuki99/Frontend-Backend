@@ -116,6 +116,18 @@
       <p>Данные загружаются из фейкового API. Выберите задачу, чтобы получить её по ID.</p>
     </div>
     <div class="task-box todo-manager">
+      <form class="todo-form todo-create-form" data-todo-form="create">
+        <label>Название задачи
+          <input name="todo" type="text" required maxlength="200" placeholder="Например, проверить CRUD">
+        </label>
+        <label>ID пользователя
+          <input name="userId" type="number" min="1" step="1" value="1" required>
+        </label>
+        <label class="todo-checkbox-label">
+          <input name="completed" type="checkbox"> Выполнена
+        </label>
+        <button class="todo-open-button" type="submit">Добавить задачу</button>
+      </form>
       <div class="todo-toolbar">
         <p id="todo-count" class="todo-count" aria-live="polite">Загрузка задач…</p>
         <button class="cta-btn" data-action="todos-refresh">Обновить список</button>

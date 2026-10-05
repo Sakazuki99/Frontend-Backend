@@ -77,6 +77,7 @@
     loadTodos();
 
     document.addEventListener('click', handleClick);
+    document.addEventListener('submit', handleTodoSubmit);
     document.addEventListener('keydown', handleRubikKeyboard);
   }
 
@@ -125,6 +126,15 @@
         break;
       case 'todo-open':
         showTodoDetails(control.dataset.id);
+        break;
+      case 'todo-toggle':
+        toggleTodo(control.dataset.id);
+        break;
+      case 'todo-edit':
+        showTodoDetails(control.dataset.id, control.dataset.editing !== 'true');
+        break;
+      case 'todo-delete':
+        deleteTodo(control.dataset.id);
         break;
       case 'rubik-move':
         performRubikMove(control.dataset.move);
@@ -221,7 +231,19 @@
         button.dataset.action = 'todo-open';
         button.dataset.id = todo.id;
         button.textContent = `Открыть задачу #${todo.id}`;
-        card.append(title, status, button);
+        const toggleButton = document.createElement('button');
+        toggleButton.type = 'button';
+        toggleButton.className = 'todo-open-button';
+        toggleButton.dataset.action = 'todo-toggle';
+        toggleButton.dataset.id = todo.id;
+        toggleButton.textContent = todo.completed ? 'Отметить незавершённой' : 'Отметить выполненной';
+        const deleteButton = document.createElement('button');
+        deleteButton.type = 'button';
+        deleteButton.className = 'todo-open-button';
+        deleteButton.dataset.action = 'todo-delete';
+        deleteButton.dataset.id = todo.id;
+        deleteButton.textContent = 'Удалить';
+        card.append(title, status, button, toggleButton, deleteButton);
         elements.todoList.append(card);
       });
     } catch (error) {
@@ -230,7 +252,7 @@
     }
   }
 
-  async function showTodoDetails(id) {
+  async function showTodoDetails(id, editing = false) {
     if (!elements.todoDetails || !window.fakeTodoApi) return;
 
     elements.todoDetails.textContent = 'Загрузка задачи…';
@@ -240,6 +262,7 @@
         elements.todoDetails.textContent = `Задача с ID ${id} не найдена.`;
         return;
       }
+      elements.todoDetails.dataset.id = String(todo.id);
 
       const heading = document.createElement('h2');
       heading.textContent = `Задача #${todo.id}`;
@@ -249,9 +272,126 @@
       status.textContent = `Статус: ${todo.completed ? 'выполнена' : 'не выполнена'}`;
       const owner = document.createElement('p');
       owner.textContent = `Пользователь: ${todo.userId}`;
-      elements.todoDetails.replaceChildren(heading, description, status, owner);
+      const actions = document.createElement('div');
+      actions.className = 'todo-actions';
+      const editButton = document.createElement('button');
+      editButton.type = 'button';
+      editButton.className = 'todo-open-button';
+      editButton.dataset.action = 'todo-edit';
+      editButton.dataset.id = todo.id;
+      editButton.dataset.editing = String(editing);
+      editButton.textContent = editing ? 'Закрыть редактирование' : 'Редактировать';
+      const deleteButton = document.createElement('button');
+      deleteButton.type = 'button';
+      deleteButton.className = 'todo-open-button';
+      deleteButton.dataset.action = 'todo-delete';
+      deleteButton.dataset.id = todo.id;
+      deleteButton.textContent = 'Удалить';
+      actions.append(editButton, deleteButton);
+
+      const content = [heading, description, status, owner, actions];
+      if (editing) content.push(createTodoEditForm(todo));
+      elements.todoDetails.replaceChildren(...content);
     } catch (error) {
       elements.todoDetails.textContent = `Не удалось получить задачу: ${error.message}`;
+    }
+  }
+
+  function createTodoEditForm(todo) {
+    const form = document.createElement('form');
+    form.className = 'todo-form';
+    form.dataset.todoForm = 'update';
+    form.dataset.id = todo.id;
+    const titleLabel = document.createElement('label');
+    titleLabel.textContent = 'Название задачи';
+    const titleInput = document.createElement('input');
+    titleInput.name = 'todo';
+    titleInput.required = true;
+    titleInput.value = todo.todo;
+    titleLabel.append(titleInput);
+
+    const userLabel = document.createElement('label');
+    userLabel.textContent = 'ID пользователя';
+    const userInput = document.createElement('input');
+    userInput.name = 'userId';
+    userInput.type = 'number';
+    userInput.min = '1';
+    userInput.step = '1';
+    userInput.required = true;
+    userInput.value = todo.userId;
+    userLabel.append(userInput);
+
+    const completedLabel = document.createElement('label');
+    completedLabel.className = 'todo-checkbox-label';
+    const completedInput = document.createElement('input');
+    completedInput.name = 'completed';
+    completedInput.type = 'checkbox';
+    completedInput.checked = todo.completed;
+    completedLabel.append(completedInput, document.createTextNode(' Выполнена'));
+    const submit = document.createElement('button');
+    submit.type = 'submit';
+    submit.className = 'todo-open-button';
+    submit.textContent = 'Сохранить';
+    form.append(titleLabel, userLabel, completedLabel, submit);
+    return form;
+  }
+
+  async function handleTodoSubmit(event) {
+    const form = event.target.closest('form[data-todo-form]');
+    if (!form) return;
+    event.preventDefault();
+    const data = new FormData(form);
+    try {
+      if (form.dataset.todoForm === 'create') {
+        await window.fakeTodoApi.create({
+          todo: data.get('todo'),
+          userId: Number(data.get('userId')) || 1,
+          completed: data.get('completed') === 'on',
+        });
+        form.reset();
+        await loadTodos();
+        delete elements.todoDetails.dataset.id;
+        elements.todoDetails.textContent = 'Задача создана.';
+      } else if (form.dataset.todoForm === 'update') {
+        const id = form.dataset.id;
+        await window.fakeTodoApi.update(id, {
+          todo: data.get('todo'),
+          userId: Number(data.get('userId')),
+          completed: data.get('completed') === 'on',
+        });
+        await loadTodos();
+        await showTodoDetails(id);
+      }
+    } catch (error) {
+      const message = document.createElement('p');
+      message.className = 'todo-error';
+      message.textContent = error.message;
+      form.append(message);
+    }
+  }
+
+  async function toggleTodo(id) {
+    try {
+      const todo = await window.fakeTodoApi.getById(id);
+      if (!todo) return;
+      await window.fakeTodoApi.update(id, { completed: !todo.completed });
+      await loadTodos();
+      if (elements.todoDetails.dataset.id === String(id)) await showTodoDetails(id);
+    } catch (error) {
+      elements.todoDetails.textContent = `Не удалось обновить задачу: ${error.message}`;
+    }
+  }
+
+  async function deleteTodo(id) {
+    try {
+      await window.fakeTodoApi.delete(id);
+      await loadTodos();
+      if (elements.todoDetails.dataset.id === String(id)) {
+        delete elements.todoDetails.dataset.id;
+        elements.todoDetails.textContent = 'Задача удалена. Выберите другую задачу.';
+      }
+    } catch (error) {
+      elements.todoDetails.textContent = `Не удалось удалить задачу: ${error.message}`;
     }
   }
 // ..........................................
