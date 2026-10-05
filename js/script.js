@@ -816,25 +816,30 @@
     if (!document.getElementById('page-rubik')?.classList.contains('active')) return;
     if (event.target.closest('input, textarea, select, [contenteditable="true"]')) return;
 
-    const viewMoves = {
-      ArrowUp: [-12, 0],
-      ArrowDown: [12, 0],
-      ArrowLeft: [0, -18],
-      ArrowRight: [0, 18],
+    const arrowFaceMoves = {
+      ArrowUp: 'U',
+      ArrowDown: 'D',
+      ArrowLeft: 'L',
+      ArrowRight: 'R',
     };
-    const viewMove = viewMoves[event.key];
 
-    if (viewMove) {
+    if (event.ctrlKey && arrowFaceMoves[event.key]) {
       event.preventDefault();
-      rotateRubikView(...viewMove);
+      const viewMoves = {
+        ArrowUp: [-12, 0],
+        ArrowDown: [12, 0],
+        ArrowLeft: [0, -18],
+        ArrowRight: [0, 18],
+      };
+      rotateRubikView(...viewMoves[event.key]);
       return;
     }
 
-    const face = event.key.toUpperCase();
+    const face = arrowFaceMoves[event.key] || event.key.toUpperCase();
     if (!rubikFaces.includes(face)) return;
 
     event.preventDefault();
-    performRubikMove(`${face}${event.shiftKey ? "'" : ''}`);
+    performRubikMove(`${face}${event.shiftKey ? String.fromCharCode(39) : ''}`);
   }
 
   function performRubikMove(move, record = true) {
