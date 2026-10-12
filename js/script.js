@@ -730,11 +730,7 @@
       if (!todo) return;
       const updatedTodo = await window.fakeTodoApi.update(id, { completed: button.checked });
       allTodos = allTodos.map((item) => item.id === updatedTodo.id ? updatedTodo : item);
-      const listUpdated = await loadTodos();
-      setTodoNotice(
-        listUpdated ? 'Статус задачи обновлён.' : 'Статус обновлён, но список не обновился. Попробуйте обновить его.',
-        listUpdated ? 'success' : 'error',
-      );
+      await loadTodos();
     } catch (error) {
       setTodoNotice(`Не удалось обновить задачу: ${error.message}`, 'error');
     } finally {
@@ -755,11 +751,7 @@
       allTodos = allTodos.filter((todo) => todo.id !== Number(id));
       editingTodoIds.delete(String(id));
       renderTodos();
-      const listUpdated = await loadTodos();
-      setTodoNotice(
-        listUpdated ? 'Задача удалена.' : 'Задача удалена, но список не обновился. Попробуйте обновить его.',
-        listUpdated ? 'success' : 'error',
-      );
+      await loadTodos();
     } catch (error) {
       setTodoNotice(`Не удалось удалить задачу: ${error.message}`, 'error');
     } finally {
