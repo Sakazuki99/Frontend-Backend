@@ -724,7 +724,7 @@
     if (pendingTodoIds.has(String(id))) return;
     pendingTodoIds.add(String(id));
     button.disabled = true;
-    button.textContent = 'Обновляем…';
+    button.textContent = '\u041E\u0431\u043D\u043E\u0432\u043B\u044F\u0435\u043C\u2026';
     try {
       const todo = allTodos.find((item) => item.id === Number(id));
       if (!todo) return;
@@ -732,7 +732,7 @@
       allTodos = allTodos.map((item) => item.id === updatedTodo.id ? updatedTodo : item);
       await loadTodos();
     } catch (error) {
-      setTodoNotice(`Не удалось обновить задачу: ${error.message}`, 'error');
+      setTodoNotice('\u041D\u0435 \u0443\u0434\u0430\u043B\u043E\u0441\u044C \u043E\u0431\u043D\u043E\u0432\u0438\u0442\u044C \u0437\u0430\u0434\u0430\u0447\u0443: ' + error.message, 'error');
     } finally {
       pendingTodoIds.delete(String(id));
       renderTodos();
@@ -741,9 +741,6 @@
 
   async function deleteTodo(id, button) {
     if (pendingTodoIds.has(String(id))) return;
-    const todo = allTodos.find((item) => item.id === Number(id));
-    const taskLabel = todo ? `«${todo.todo}»` : `#${id}`;
-    if (!window.confirm(`Удалить задачу ${taskLabel}?`)) return;
     pendingTodoIds.add(String(id));
     button.disabled = true;
     try {
@@ -753,13 +750,12 @@
       renderTodos();
       await loadTodos();
     } catch (error) {
-      setTodoNotice(`Не удалось удалить задачу: ${error.message}`, 'error');
+      setTodoNotice('\u041D\u0435 \u0443\u0434\u0430\u043B\u043E\u0441\u044C \u0443\u0434\u0430\u043B\u0438\u0442\u044C \u0437\u0430\u0434\u0430\u0447\u0443: ' + error.message, 'error');
     } finally {
       pendingTodoIds.delete(String(id));
       renderTodos();
     }
   }
-
   function setTodoNotice(message, type = '') {
     if (!elements.todoNotice) return;
     elements.todoNotice.textContent = message;
