@@ -336,18 +336,29 @@
     list.className = 'user-task-list';
     todos.forEach((todo) => {
       const card = document.createElement('article');
-      card.className = `user-task-card${todo.completed ? ' is-completed' : ''}`;
+      card.className = `user-task-card task-card${todo.completed ? ' is-completed' : ''}`;
+      const header = document.createElement('div');
+      header.className = 'task-card-heading-row';
       const name = document.createElement('h3');
+      name.className = 'task-card-title';
       name.textContent = todo.todo;
       const meta = document.createElement('div');
       meta.className = 'user-task-meta';
       const idLabel = document.createElement('span');
       idLabel.textContent = `Задача #${todo.id}`;
-      const status = document.createElement('span');
-      status.className = `user-task-status${todo.completed ? ' is-completed' : ''}`;
-      status.textContent = todo.completed ? 'Выполнена' : 'В работе';
-      meta.append(idLabel, status);
-      card.append(name, meta);
+      const status = document.createElement('label');
+      status.className = `todo-checkbox-status${todo.completed ? ' is-complete' : ''}`;
+      const checkbox = document.createElement('input');
+      checkbox.type = 'checkbox';
+      checkbox.checked = todo.completed;
+      checkbox.disabled = true;
+      checkbox.setAttribute('aria-label', todo.completed
+        ? '\u0417\u0430\u0434\u0430\u0447\u0430 \u0432\u044b\u043f\u043e\u043b\u043d\u0435\u043d\u0430'
+        : '\u0417\u0430\u0434\u0430\u0447\u0430 \u0432 \u0440\u0430\u0431\u043e\u0442\u0435');
+      status.append(checkbox);
+      header.append(name, status);
+      meta.append(idLabel);
+      card.append(header, meta);
       list.append(card);
     });
     section.append(list);
@@ -613,19 +624,19 @@
     const card = document.createElement('article');
     const todoId = String(todo.id);
     const isPending = pendingTodoIds.has(todoId);
-    card.className = `todo-card${todo.completed ? ' is-completed' : ''}`;
+    card.className = `todo-card task-card${todo.completed ? ' is-completed' : ''}`;
     card.dataset.todoId = todoId;
 
     const heading = document.createElement('h2');
-    heading.className = 'todo-card-title';
+    heading.className = 'todo-card-title task-card-title';
     heading.textContent = todo.todo;
     const header = document.createElement('div');
-    header.className = 'todo-card-heading-row';
+    header.className = 'task-card-heading-row';
     const meta = document.createElement('p');
     meta.className = 'todo-meta';
     meta.textContent = `Задача #${todo.id}`;
     const status = document.createElement('label');
-    status.className = `todo-status todo-checkbox-status${todo.completed ? ' is-complete' : ''}`;
+    status.className = `todo-checkbox-status${todo.completed ? ' is-complete' : ''}`;
     const statusCheckbox = document.createElement('input');
     statusCheckbox.type = 'checkbox';
     statusCheckbox.dataset.action = 'todo-toggle';
@@ -633,10 +644,16 @@
     statusCheckbox.checked = todo.completed;
     statusCheckbox.disabled = isPending;
     statusCheckbox.setAttribute('aria-label', todo.completed ? 'Снять отметку выполнения задачи' : 'Отметить задачу выполненной');
-    status.append(statusCheckbox, document.createTextNode(todo.completed ? 'Выполнена' : 'В работе'));
+    status.title = todo.completed
+      ? '\u0421\u043d\u044f\u0442\u044c \u043e\u0442\u043c\u0435\u0442\u043a\u0443 \u0432\u044b\u043f\u043e\u043b\u043d\u0435\u043d\u0438\u044f'
+      : '\u041e\u0442\u043c\u0435\u0442\u0438\u0442\u044c \u0432\u044b\u043f\u043e\u043b\u043d\u0435\u043d\u0438\u0435';
+    status.append(statusCheckbox);
     header.append(heading, status);
 
     const assignee = createTodoAssignee(todo);
+    const info = document.createElement('div');
+    info.className = 'todo-card-info';
+    info.append(meta, assignee);
     const actions = document.createElement('div');
     actions.className = 'todo-actions';
     const openButton = document.createElement('button');
@@ -656,7 +673,7 @@
     deleteButton.setAttribute('aria-label', '\u0423\u0434\u0430\u043b\u0438\u0442\u044c \u0437\u0430\u0434\u0430\u0447\u0443');
     deleteButton.title = '\u0423\u0434\u0430\u043b\u0438\u0442\u044c \u0437\u0430\u0434\u0430\u0447\u0443';
     actions.append(openButton, deleteButton);
-    card.append(header, meta, assignee, actions);
+    card.append(header, info, actions);
     return card;
   }
 
@@ -883,7 +900,9 @@
     button.setAttribute('aria-busy', 'true');
     const statusLabel = button.closest('.todo-checkbox-status');
     statusLabel?.classList.add('is-pending');
-    if (statusLabel?.lastChild) statusLabel.lastChild.textContent = ' Сохраняем…';
+    button.setAttribute('aria-label', button.checked
+      ? '\u0421\u043d\u044f\u0442\u044c \u043e\u0442\u043c\u0435\u0442\u043a\u0443 \u0432\u044b\u043f\u043e\u043b\u043d\u0435\u043d\u0438\u044f \u0437\u0430\u0434\u0430\u0447\u0438'
+      : '\u041e\u0442\u043c\u0435\u0442\u0438\u0442\u044c \u0437\u0430\u0434\u0430\u0447\u0443 \u0432\u044b\u043f\u043e\u043b\u043d\u0435\u043d\u043d\u043e\u0439');
     try {
       const todo = allTodos.find((item) => item.id === Number(id));
       if (!todo) return;
