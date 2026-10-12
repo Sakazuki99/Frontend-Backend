@@ -10,6 +10,8 @@
   let todoLoadVersion = 0;
   let todoPage = 1;
   let todoSearchTimer = 0;
+  let todoSort = 'newest';
+  let activeUserTodos = [];
   const todosPerPage = 12;
   let allTodos = [];
   const userCache = new Map();
@@ -37,6 +39,7 @@
     elements.todoSearch = document.getElementById('todo-search');
     elements.todoSearchClear = document.getElementById('todo-search-clear');
     elements.todoFilter = document.getElementById('todo-filter');
+    elements.todoSortField = document.getElementById('todo-sort-field');
     elements.todoPagination = document.getElementById('todo-pagination');
     elements.todoCreateForm = document.getElementById('todo-create-form');
     elements.todoRefresh = document.querySelector('[data-action="todos-refresh"]');
@@ -48,6 +51,8 @@
     elements.todoUserDialogContent = document.getElementById('todo-user-dialog-content');
     elements.userProfileContent = document.getElementById('user-profile-content');
     elements.userProfileTitle = document.getElementById('user-profile-title');
+
+    elements.todoSortField?.replaceWith(createTodoSortField('todo-sort'));
 
     initializeTheme();
     initializeTask1();
@@ -74,6 +79,18 @@
   }
 
   function handleTodoChange(event) {
+    const sortSelect = event.target.closest('select[data-action="todo-sort"]');
+    if (sortSelect) {
+      todoSort = sortSelect.value;
+      document.querySelectorAll('select[data-action="todo-sort"]').forEach((select) => {
+        select.value = todoSort;
+      });
+      todoPage = 1;
+      renderTodos();
+      renderUserTaskCards();
+      return;
+    }
+
     const checkbox = event.target.closest('input[data-action="todo-toggle"]');
     if (checkbox) toggleTodo(checkbox.dataset.id, checkbox);
   }
@@ -287,6 +304,7 @@
     if (!Number.isInteger(id) || id < 1 || !elements.userProfileContent) return;
 
     const requestVersion = ++userProfileRequestVersion;
+    activeUserTodos = [];
     elements.userProfileTitle.textContent = `Профиль пользователя #${id}`;
     renderUserLoading(elements.userProfileContent, 'Загружаем профиль пользователя…');
 
@@ -300,8 +318,9 @@
       const user = userResult.value;
       if (!user) throw new Error(`Пользователь с ID ${id} не найден.`);
       elements.userProfileTitle.textContent = getUserName(user);
+      activeUserTodos = todosResult.status === 'fulfilled' ? todosResult.value : [];
       const userTasks = todosResult.status === 'fulfilled'
-        ? createUserTasksSection(todosResult.value)
+        ? createUserTasksSection(activeUserTodos)
         : createUserTasksError(id, todosResult.reason.message);
       elements.userProfileContent.replaceChildren(createUserDetails(user, false), userTasks);
       elements.userProfileContent.removeAttribute('aria-busy');
@@ -311,17 +330,72 @@
     }
   }
 
+  async function refreshActiveUserProfile() {
+    const match = window.location.hash.match(/^#user\/(\d+)$/);
+    if (match) await loadUserProfile(Number(match[1]));
+  }
+
+  function createTodoSortField(id) {
+    const field = document.createElement('div');
+    field.className = 'todo-filter-field';
+    const label = document.createElement('label');
+    const select = document.createElement('select');
+    select.id = id;
+    select.dataset.action = 'todo-sort';
+    label.htmlFor = id;
+    label.textContent = '\u0421\u043e\u0440\u0442\u0438\u0440\u043e\u0432\u0430\u0442\u044c';
+    [
+      ['newest', '\u0421\u043d\u0430\u0447\u0430\u043b\u0430 \u043d\u043e\u0432\u044b\u0435'],
+      ['oldest', '\u0421\u043d\u0430\u0447\u0430\u043b\u0430 \u0441\u0442\u0430\u0440\u044b\u0435'],
+      ['title-asc', '\u041d\u0430\u0437\u0432\u0430\u043d\u0438\u0435: \u0410\u2014\u042f'],
+      ['title-desc', '\u041d\u0430\u0437\u0432\u0430\u043d\u0438\u0435: \u042f\u2014\u0410'],
+    ].forEach(([value, text]) => {
+      const option = document.createElement('option');
+      option.value = value;
+      option.textContent = text;
+      select.append(option);
+    });
+    select.value = todoSort;
+    field.append(label, select);
+    return field;
+  }
+
+  function sortTodos(todos, order = todoSort) {
+    return [...todos].sort((left, right) => {
+      const idOrder = Number(right.id) - Number(left.id);
+      if (order === 'oldest') return -idOrder;
+      if (order === 'title-asc' || order === 'title-desc') {
+        const titleOrder = String(left.todo).localeCompare(String(right.todo), 'ru', { sensitivity: 'base' });
+        return (order === 'title-desc' ? -titleOrder : titleOrder) || idOrder;
+      }
+      return idOrder;
+    });
+  }
+
+  function renderUserTaskCards() {
+    const list = elements.userProfileContent?.querySelector('.user-tasks-section .todo-list');
+    if (!list) return;
+    renderTodoCards(list, activeUserTodos);
+  }
+
+  function renderTodoCards(list, todos) {
+    list.replaceChildren(...sortTodos(todos).map(createTodoCard));
+  }
+
   function createUserTasksSection(todos) {
     const section = document.createElement('section');
     section.className = 'user-tasks-section';
     const completedCount = todos.filter((todo) => todo.completed).length;
     const heading = document.createElement('div');
     heading.className = 'user-tasks-heading';
+    const headingContent = document.createElement('div');
+    headingContent.className = 'user-tasks-heading-copy';
     const title = document.createElement('h2');
     title.textContent = 'Задачи пользователя';
     const summary = document.createElement('p');
     summary.textContent = `Всего: ${todos.length} · В работе: ${todos.length - completedCount} · Выполнено: ${completedCount}`;
-    heading.append(title, summary);
+    headingContent.append(title, summary);
+    heading.append(headingContent, createTodoSortField('user-task-sort'));
     section.append(heading);
 
     if (todos.length === 0) {
@@ -333,34 +407,8 @@
     }
 
     const list = document.createElement('div');
-    list.className = 'user-task-list';
-    todos.forEach((todo) => {
-      const card = document.createElement('article');
-      card.className = `user-task-card task-card${todo.completed ? ' is-completed' : ''}`;
-      const header = document.createElement('div');
-      header.className = 'task-card-heading-row';
-      const name = document.createElement('h3');
-      name.className = 'task-card-title';
-      name.textContent = todo.todo;
-      const meta = document.createElement('div');
-      meta.className = 'user-task-meta';
-      const idLabel = document.createElement('span');
-      idLabel.textContent = `Задача #${todo.id}`;
-      const status = document.createElement('label');
-      status.className = `todo-checkbox-status${todo.completed ? ' is-complete' : ''}`;
-      const checkbox = document.createElement('input');
-      checkbox.type = 'checkbox';
-      checkbox.checked = todo.completed;
-      checkbox.disabled = true;
-      checkbox.setAttribute('aria-label', todo.completed
-        ? '\u0417\u0430\u0434\u0430\u0447\u0430 \u0432\u044b\u043f\u043e\u043b\u043d\u0435\u043d\u0430'
-        : '\u0417\u0430\u0434\u0430\u0447\u0430 \u0432 \u0440\u0430\u0431\u043e\u0442\u0435');
-      status.append(checkbox);
-      header.append(name, status);
-      meta.append(idLabel);
-      card.append(header, meta);
-      list.append(card);
-    });
+    list.className = 'todo-list';
+    renderTodoCards(list, todos);
     section.append(list);
     return section;
   }
@@ -563,12 +611,12 @@
     elements.todoProgressFill.style.width = `${completion}%`;
     elements.todoProgress.hidden = allTodos.length === 0;
     elements.todoSearchClear.hidden = !search;
-    const filteredTodos = [...allTodos].sort((left, right) => right.id - left.id).filter((todo) => {
+    const filteredTodos = sortTodos(allTodos.filter((todo) => {
       const searchableText = `${todo.todo} ${todo.userId} ${todo.id}`.toLocaleLowerCase();
       const matchesSearch = searchableText.includes(search);
       const matchesFilter = filter === 'all' || (filter === 'active' ? !todo.completed : todo.completed);
       return matchesSearch && matchesFilter;
-    });
+    }));
     const pageCount = Math.max(1, Math.ceil(filteredTodos.length / todosPerPage));
     todoPage = Math.min(Math.max(todoPage, 1), pageCount);
     const firstIndex = (todoPage - 1) * todosPerPage;
@@ -581,7 +629,7 @@
     if (filteredTodos.length === 0) {
       elements.todoList.replaceChildren(createTodoEmptyState(allTodos.length > 0));
     } else {
-      elements.todoList.replaceChildren(...visibleTodos.map(createTodoCard));
+      renderTodoCards(elements.todoList, visibleTodos);
     }
 
     const pageLabel = elements.todoPagination.querySelector('[data-page-label]');
@@ -889,12 +937,15 @@
       if (pendingUpdateId) {
         pendingTodoIds.delete(pendingUpdateId);
         renderTodos();
+        await refreshActiveUserProfile();
       }
     }
   }
 
   async function toggleTodo(id, button) {
     if (pendingTodoIds.has(String(id))) return;
+    const todo = allTodos.find((item) => item.id === Number(id));
+    if (!todo) return;
     pendingTodoIds.add(String(id));
     button.disabled = true;
     button.setAttribute('aria-busy', 'true');
@@ -904,8 +955,6 @@
       ? '\u0421\u043d\u044f\u0442\u044c \u043e\u0442\u043c\u0435\u0442\u043a\u0443 \u0432\u044b\u043f\u043e\u043b\u043d\u0435\u043d\u0438\u044f \u0437\u0430\u0434\u0430\u0447\u0438'
       : '\u041e\u0442\u043c\u0435\u0442\u0438\u0442\u044c \u0437\u0430\u0434\u0430\u0447\u0443 \u0432\u044b\u043f\u043e\u043b\u043d\u0435\u043d\u043d\u043e\u0439');
     try {
-      const todo = allTodos.find((item) => item.id === Number(id));
-      if (!todo) return;
       const updatedTodo = await window.fakeTodoApi.update(id, { completed: button.checked });
       allTodos = allTodos.map((item) => item.id === updatedTodo.id ? updatedTodo : item);
       await loadTodos();
@@ -914,11 +963,14 @@
     } finally {
       pendingTodoIds.delete(String(id));
       renderTodos();
+      await refreshActiveUserProfile();
     }
   }
 
   async function deleteTodo(id, button) {
     if (pendingTodoIds.has(String(id))) return;
+    const todo = allTodos.find((item) => item.id === Number(id));
+    if (!todo) return;
     pendingTodoIds.add(String(id));
     button.disabled = true;
     try {
@@ -931,6 +983,7 @@
     } finally {
       pendingTodoIds.delete(String(id));
       renderTodos();
+      await refreshActiveUserProfile();
     }
   }
   function setTodoNotice(message, type = '') {
