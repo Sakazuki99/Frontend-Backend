@@ -329,14 +329,6 @@
     heading.textContent = todo.todo;
     const meta = document.createElement('p');
     meta.className = 'todo-meta';
-    const userButton = document.createElement('button');
-    userButton.type = 'button';
-    userButton.className = 'todo-user-button';
-    userButton.dataset.action = 'user-open';
-    userButton.dataset.userId = String(todo.userId);
-    userButton.setAttribute('aria-label', `Открыть профиль пользователя ${todo.userId}`);
-    userButton.title = `Профиль пользователя ${todo.userId}`;
-    userButton.append(document.createTextNode('👤 Пользователь '), document.createTextNode(String(todo.userId)));
     meta.textContent = `#${todo.id} · Пользователь ${todo.userId}`;
     const status = document.createElement('label');
     status.className = `todo-status todo-checkbox-status${todo.completed ? ' is-complete' : ''}`;
@@ -370,7 +362,7 @@
     deleteButton.setAttribute('aria-label', '\u0423\u0434\u0430\u043b\u0438\u0442\u044c \u0437\u0430\u0434\u0430\u0447\u0443');
     deleteButton.title = '\u0423\u0434\u0430\u043b\u0438\u0442\u044c \u0437\u0430\u0434\u0430\u0447\u0443';
     actions.append(editButton, deleteButton);
-    card.append(heading, meta, userButton, status, actions);
+    card.append(heading, meta, status, actions);
 
     if (isEditing) card.append(createTodoEditForm(todo, todoEditDrafts.get(todoId)));
     return card;
