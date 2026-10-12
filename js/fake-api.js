@@ -1,5 +1,6 @@
 (() => {
   const todosUrl = 'https://dummyjson.com/todos';
+  const usersUrl = 'https://dummyjson.com/users';
   const updatedTodos = new Map();
   const createdTodos = new Map();
   const deletedTodoIds = new Set();
@@ -95,6 +96,12 @@
     }
   }
 
+  async function getUserById(id) {
+    const userId = Number(id);
+    if (!Number.isInteger(userId) || userId < 1) return null;
+    return request(`${usersUrl}/${userId}`);
+  }
+
   async function create(input) {
     const fields = validateTodoFields(input, true);
     const payload = {
@@ -149,6 +156,7 @@
   window.fakeTodoApi = Object.freeze({
     getAll,
     getById,
+    getUserById,
     create,
     update,
     remove,

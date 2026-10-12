@@ -113,14 +113,21 @@
   <section class="page" id="page-todos">
     <div class="masthead">
       <h1>Менеджер задач</h1>
-      <p>Задачи загружаются из DummyJSON. Добавление, изменение и удаление имитируются API и не сохраняются на сервере — изменения остаются до перезагрузки страницы.</p>
+      <p>Соберите дела в одном месте, отмечайте прогресс и быстро находите нужное.</p>
+      <p class="todo-api-note">Данные задач загружаются из DummyJSON. Добавленные и изменённые задачи хранятся до перезагрузки страницы.</p>
     </div>
     <div class="task-box todo-manager">
       <div class="todo-toolbar">
-        <p id="todo-count" class="todo-count" aria-live="polite">Загрузка задач…</p>
+        <div class="todo-overview">
+          <p id="todo-count" class="todo-count" aria-live="polite">Загрузка задач…</p>
+          <p id="todo-summary" class="todo-summary">Считаем задачи…</p>
+          <div class="todo-progress" role="progressbar" aria-label="Выполненные задачи" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
+            <span id="todo-progress-fill"></span>
+          </div>
+        </div>
         <div class="todo-toolbar-actions">
-          <button class="cta-btn" type="button" data-action="todo-create-toggle" aria-expanded="false" aria-controls="todo-create-form">Добавить задачу</button>
-          <button class="cta-btn" type="button" data-action="todos-refresh">Обновить</button>
+          <button class="cta-btn todo-create-toggle" type="button" data-action="todo-create-toggle" aria-expanded="false" aria-controls="todo-create-form"><span aria-hidden="true">＋</span> Добавить задачу</button>
+          <button class="cta-btn todo-refresh-button" type="button" data-action="todos-refresh"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 7v5h-5"></path><path d="M4 17v-5h5"></path><path d="M5.6 9a7 7 0 0 1 11.6-2L20 12M4 12l2.8 5a7 7 0 0 0 11.6-2"></path></svg> Обновить</button>
         </div>
       </div>
       <form id="todo-create-form" class="todo-form todo-create-form" data-todo-form="create" hidden>
@@ -136,14 +143,22 @@
         <button class="todo-open-button" type="submit">Добавить задачу</button>
       </form>
       <div class="todo-filters">
-        <label for="todo-search">Поиск задач</label>
-        <input id="todo-search" type="search" placeholder="Название, ID задачи или пользователя">
-        <label for="todo-filter">Статус</label>
-        <select id="todo-filter">
-          <option value="all">Все задачи</option>
-          <option value="active">В работе</option>
-          <option value="completed">Выполненные</option>
-        </select>
+        <div class="todo-filter-field todo-filter-search">
+          <label for="todo-search">Найти задачу</label>
+          <div class="todo-search-control">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"></circle><path d="m16 16 4 4"></path></svg>
+            <input id="todo-search" type="search" placeholder="Название, ID задачи или пользователя">
+            <button id="todo-search-clear" class="todo-search-clear" type="button" data-action="todo-search-clear" aria-label="Очистить поиск" title="Очистить поиск" hidden>×</button>
+          </div>
+        </div>
+        <div class="todo-filter-field">
+          <label for="todo-filter">Показать</label>
+          <select id="todo-filter">
+            <option value="all">Все задачи</option>
+            <option value="active">В работе</option>
+            <option value="completed">Выполненные</option>
+          </select>
+        </div>
       </div>
       <p id="todo-notice" class="todo-notice" role="status" aria-live="polite"></p>
       <div id="todo-list" class="todo-list" aria-live="polite"></div>
@@ -154,6 +169,23 @@
       </nav>
     </div>
   </section>
+
+  <section class="page user-profile-page" id="page-user">
+    <div class="masthead">
+      <a class="todo-open-button user-profile-back" href="#todos">← К менеджеру задач</a>
+      <h1 id="user-profile-title">Профиль пользователя</h1>
+      <p>Данные загружены из DummyJSON.</p>
+    </div>
+    <div id="user-profile-content" class="task-box user-profile-content" aria-live="polite"></div>
+  </section>
+
+  <dialog id="todo-user-dialog" class="todo-user-dialog" aria-labelledby="todo-user-dialog-title">
+    <div class="todo-user-dialog-header">
+      <h2 id="todo-user-dialog-title">Данные пользователя</h2>
+      <button class="todo-user-dialog-close" type="button" data-action="todo-user-close" aria-label="Закрыть окно">×</button>
+    </div>
+    <div id="todo-user-dialog-content" class="todo-user-dialog-content" aria-live="polite"></div>
+  </dialog>
 
   
   <section class="page" id="page-task3">
