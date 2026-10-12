@@ -1380,30 +1380,6 @@ body{
   opacity: 0.65;
 }
 
-.todo-user-button{
-  display: inline-grid;
-  width: 36px;
-  height: 36px;
-  place-items: center;
-  padding: 0;
-  border: 1px solid var(--line);
-  border-radius: 9px;
-  background: var(--bg);
-  color: var(--accent);
-  cursor: pointer;
-  transition: border-color 0.15s ease, background-color 0.15s ease;
-}
-
-.todo-user-button:hover{
-  border-color: var(--accent);
-  background: var(--accent-soft);
-}
-
-.todo-user-button svg{
-  width: 20px;
-  height: 20px;
-}
-
 .todo-user-dialog{
   width: min(560px, calc(100% - 28px));
   max-height: min(720px, calc(100% - 28px));
@@ -1633,7 +1609,6 @@ body{
 }
 
 .navbar button:focus-visible,
-.todo-user-button:focus-visible,
 .todo-user-dialog-close:focus-visible,
 .todo-search-clear:focus-visible{
   outline: 3px solid color-mix(in srgb, var(--accent) 42%, transparent);
@@ -1900,6 +1875,22 @@ body{
   opacity: 1;
 }
 
+.todo-card-heading-row{
+  display: flex;
+  width: 100%;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.todo-card .todo-card-title{
+  min-width: 0;
+  flex: 1 1 auto;
+  padding-top: 5px;
+  font-size: 16px;
+  line-height: 1.45;
+}
+
 .todo-card.is-completed::before{
   background: var(--success);
   opacity: 1;
@@ -1933,10 +1924,6 @@ body{
 .todo-card .todo-actions .todo-open-button:not(.todo-delete-button){
   min-height: 36px;
   padding: 7px 12px;
-}
-
-.todo-card .todo-user-button{
-  margin-right: auto;
 }
 
 .todo-card .todo-open-button.todo-delete-button{
@@ -2242,5 +2229,239 @@ body{
   .navbar{
     transition-duration: 0.01ms;
     scroll-behavior: auto;
+  }
+}
+
+/* Task details and editing modal */
+.todo-detail-dialog{
+  width: min(560px, calc(100% - 28px));
+  max-height: min(720px, calc(100% - 28px));
+  padding: 0;
+  overflow: auto;
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  background: var(--card-bg);
+  color: var(--ink);
+  box-shadow: 0 28px 100px rgba(14, 24, 52, 0.34);
+}
+
+.todo-detail-dialog::backdrop{
+  background: rgba(8, 14, 30, 0.6);
+  backdrop-filter: blur(4px);
+}
+
+.todo-detail-dialog-content{
+  padding: 22px;
+}
+
+.todo-detail-content{
+  display: grid;
+  justify-items: start;
+  gap: 14px;
+}
+
+.todo-detail-title{
+  margin: 0;
+  color: var(--ink);
+  font-size: 21px;
+  line-height: 1.4;
+  overflow-wrap: anywhere;
+}
+
+.todo-detail-content .todo-meta{
+  margin: 0;
+}
+
+.todo-detail-status{
+  margin: 0;
+  padding: 7px 11px;
+  border-radius: 999px;
+  background: var(--accent-soft);
+  color: var(--accent);
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.todo-detail-status.is-completed{
+  background: color-mix(in srgb, var(--success) 12%, var(--card-bg));
+  color: var(--success);
+}
+
+.todo-detail-actions{
+  display: flex;
+  width: 100%;
+  justify-content: flex-end;
+  padding-top: 14px;
+  margin-top: 2px;
+  border-top: 1px solid var(--line);
+}
+
+.todo-dialog-edit-form{
+  display: grid;
+  align-items: stretch;
+  grid-template-columns: 1fr;
+  gap: 14px;
+}
+
+.todo-dialog-edit-form label{
+  gap: 7px;
+}
+
+.todo-dialog-edit-form input:not([type="checkbox"]){
+  width: 100%;
+  min-width: 0;
+  min-height: 44px;
+}
+
+.todo-dialog-edit-form .todo-open-button{
+  min-height: 42px;
+  margin: 0;
+}
+
+.todo-dialog-edit-form [type="submit"]{
+  border-color: var(--accent);
+  background: var(--accent);
+  color: #fff;
+}
+
+.todo-dialog-edit-form [type="submit"]:hover{
+  background: var(--accent-hover);
+}
+
+/* Larger checkbox hit areas make task status easier to change. */
+.todo-card .todo-checkbox-status{
+  min-height: 42px;
+  flex: 0 0 auto;
+  gap: 8px;
+  padding: 6px 10px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--bg);
+  color: var(--ink-soft);
+  font-size: 11px;
+  font-weight: 650;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: border-color 0.15s ease, background-color 0.15s ease, color 0.15s ease;
+}
+
+.todo-card .todo-checkbox-status:hover{
+  border-color: color-mix(in srgb, var(--accent) 44%, var(--line));
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+
+.todo-card .todo-checkbox-status.is-complete{
+  border-color: color-mix(in srgb, var(--success) 28%, var(--line));
+  color: var(--success);
+}
+
+.todo-card .todo-checkbox-status:focus-within{
+  outline: 3px solid color-mix(in srgb, var(--accent) 25%, transparent);
+  outline-offset: 2px;
+}
+
+.todo-card .todo-checkbox-status.is-pending{
+  cursor: wait;
+  opacity: 0.72;
+}
+
+.todo-checkbox-status input{
+  width: 22px;
+  height: 22px;
+  flex: 0 0 auto;
+  margin: 0;
+  accent-color: var(--success);
+  cursor: pointer;
+}
+
+.todo-checkbox-status input:focus-visible,
+.todo-form .todo-checkbox-label input:focus-visible{
+  outline: 3px solid color-mix(in srgb, var(--accent) 38%, transparent);
+  outline-offset: 2px;
+}
+
+.todo-checkbox-status input:disabled{
+  cursor: wait;
+}
+
+.todo-card.is-completed .todo-card-title{
+  color: var(--ink-soft);
+}
+
+.todo-form .todo-checkbox-label{
+  min-height: 44px;
+  gap: 10px;
+  padding: 6px 11px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--card-bg);
+  cursor: pointer;
+}
+
+.todo-form .todo-checkbox-label input[type="checkbox"]{
+  width: 22px;
+  height: 22px;
+  flex: 0 0 auto;
+  margin: 0;
+  accent-color: var(--success);
+  cursor: pointer;
+}
+
+.todo-assignee{
+  display: inline-flex;
+  max-width: 100%;
+  min-height: 44px;
+  align-items: center;
+  gap: 9px;
+  padding: 4px 10px 4px 4px;
+  border: 1px solid transparent;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--ink);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition: border-color 0.15s ease, background-color 0.15s ease;
+}
+
+.todo-assignee:hover{
+  border-color: var(--line);
+  background: var(--bg);
+}
+
+.todo-assignee-avatar{
+  display: grid;
+  width: 34px;
+  height: 34px;
+  flex: 0 0 auto;
+  place-items: center;
+  border: 1px solid var(--line);
+  border-radius: 50%;
+  background: var(--accent-soft);
+  color: var(--accent);
+  font-size: 11px;
+  font-weight: 800;
+  object-fit: cover;
+}
+
+.todo-assignee-name{
+  overflow: hidden;
+  color: var(--ink-soft);
+  font-size: 13px;
+  font-weight: 650;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.todo-assignee:focus-visible,
+.todo-detail-dialog button:focus-visible{
+  outline: 3px solid color-mix(in srgb, var(--accent) 38%, transparent);
+  outline-offset: 2px;
+}
+
+@media (max-width: 480px){
+  .todo-detail-dialog-content{
+    padding: 17px;
   }
 }

@@ -15,8 +15,7 @@
   let userDialogRequestVersion = 0;
   let userProfileRequestVersion = 0;
   const pendingTodoIds = new Set();
-  const editingTodoIds = new Set();
-  const todoEditDrafts = new Map();
+  let activeTodoDialogId = null;
 
   function initialize() {
     elements.memberTabs = document.getElementById('member-tabs');
@@ -41,6 +40,9 @@
     elements.todoCreateForm = document.getElementById('todo-create-form');
     elements.todoRefresh = document.querySelector('[data-action="todos-refresh"]');
     elements.todoNotice = document.getElementById('todo-notice');
+    elements.todoDetailDialog = document.getElementById('todo-detail-dialog');
+    elements.todoDetailDialogTitle = document.getElementById('todo-detail-dialog-title');
+    elements.todoDetailDialogContent = document.getElementById('todo-detail-dialog-content');
     elements.todoUserDialog = document.getElementById('todo-user-dialog');
     elements.todoUserDialogContent = document.getElementById('todo-user-dialog-content');
     elements.userProfileContent = document.getElementById('user-profile-content');
@@ -82,6 +84,11 @@
 
     if (event.target === elements.todoUserDialog) {
       elements.todoUserDialog.close();
+      return;
+    }
+
+    if (event.target === elements.todoDetailDialog) {
+      elements.todoDetailDialog.close();
       return;
     }
 
@@ -133,8 +140,17 @@
       case 'todo-create-toggle':
         toggleCreateTodoForm();
         break;
+      case 'todo-open':
+        openTodoDialog(control.dataset.id);
+        break;
       case 'todo-edit':
-        toggleTodoEdit(control.dataset.id);
+        renderTodoEditDialog(control.dataset.id);
+        break;
+      case 'todo-edit-cancel':
+        renderTodoDetails(activeTodoDialogId);
+        break;
+      case 'todo-detail-close':
+        elements.todoDetailDialog?.close();
         break;
       case 'todo-delete':
         deleteTodo(control.dataset.id, control);
@@ -203,6 +219,7 @@
   function handleUserRoute() {
     const match = window.location.hash.match(/^#user\/(\d+)$/);
     if (match) {
+      elements.todoDetailDialog?.close();
       elements.todoUserDialog?.close();
       showPage('user');
       loadUserProfile(Number(match[1]));
@@ -210,6 +227,7 @@
     }
 
     if (window.location.hash === '#todos') {
+      elements.todoDetailDialog?.close();
       elements.todoUserDialog?.close();
       showPage('todos');
       return;
@@ -508,15 +526,6 @@
   function renderTodos() {
     if (!elements.todoList) return;
 
-    elements.todoList.querySelectorAll('form[data-todo-form="update"]').forEach((form) => {
-      const data = new FormData(form);
-      todoEditDrafts.set(String(form.dataset.id), {
-        todo: data.get('todo'),
-        userId: Number(data.get('userId')),
-        completed: data.get('completed') === 'on',
-      });
-    });
-
     const search = elements.todoSearch.value.trim().toLocaleLowerCase();
     const filter = elements.todoFilter.value;
     const completedCount = allTodos.filter((todo) => todo.completed).length;
@@ -588,16 +597,18 @@
   function createTodoCard(todo) {
     const card = document.createElement('article');
     const todoId = String(todo.id);
-    const isEditing = editingTodoIds.has(todoId);
     const isPending = pendingTodoIds.has(todoId);
-    card.className = `todo-card${isEditing ? ' is-editing' : ''}${todo.completed ? ' is-completed' : ''}`;
+    card.className = `todo-card${todo.completed ? ' is-completed' : ''}`;
     card.dataset.todoId = todoId;
 
     const heading = document.createElement('h2');
+    heading.className = 'todo-card-title';
     heading.textContent = todo.todo;
+    const header = document.createElement('div');
+    header.className = 'todo-card-heading-row';
     const meta = document.createElement('p');
     meta.className = 'todo-meta';
-    meta.textContent = `#${todo.id} · Пользователь ${todo.userId}`;
+    meta.textContent = `Задача #${todo.id}`;
     const status = document.createElement('label');
     status.className = `todo-status todo-checkbox-status${todo.completed ? ' is-complete' : ''}`;
     const statusCheckbox = document.createElement('input');
@@ -605,43 +616,122 @@
     statusCheckbox.dataset.action = 'todo-toggle';
     statusCheckbox.dataset.id = todoId;
     statusCheckbox.checked = todo.completed;
-    statusCheckbox.disabled = isPending || isEditing;
-    statusCheckbox.setAttribute('aria-label', '\u0418\u0437\u043c\u0435\u043d\u0438\u0442\u044c \u0441\u0442\u0430\u0442\u0443\u0441 \u0437\u0430\u0434\u0430\u0447\u0438');
-    status.append(statusCheckbox, document.createTextNode(todo.completed ? ' \u0412\u044b\u043f\u043e\u043b\u043d\u0435\u043d\u0430' : ' \u0412 \u0440\u0430\u0431\u043e\u0442\u0435'));
+    statusCheckbox.disabled = isPending;
+    statusCheckbox.setAttribute('aria-label', todo.completed ? 'Снять отметку выполнения задачи' : 'Отметить задачу выполненной');
+    status.append(statusCheckbox, document.createTextNode(todo.completed ? 'Выполнена' : 'В работе'));
+    header.append(heading, status);
 
+    const assignee = createTodoAssignee(todo);
     const actions = document.createElement('div');
     actions.className = 'todo-actions';
-    const userButton = document.createElement('button');
-    userButton.type = 'button';
-    userButton.className = 'todo-user-button';
-    userButton.dataset.action = 'todo-user';
-    userButton.dataset.userId = String(todo.userId);
-    userButton.setAttribute('aria-label', `Открыть данные пользователя ${todo.userId}`);
-    userButton.title = `Данные пользователя ${todo.userId}`;
-    userButton.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="8" r="3.5"></circle><path d="M5 20c.6-3.2 3.1-5 7-5s6.4 1.8 7 5"></path></svg>';
-    const editButton = document.createElement('button');
-    editButton.type = 'button';
-    editButton.className = 'todo-open-button';
-    editButton.dataset.action = 'todo-edit';
-    editButton.dataset.id = todoId;
-    editButton.disabled = isPending;
-    editButton.textContent = isEditing ? 'Закрыть' : 'Изменить';
-
-
+    const openButton = document.createElement('button');
+    openButton.type = 'button';
+    openButton.className = 'todo-open-button';
+    openButton.dataset.action = 'todo-open';
+    openButton.dataset.id = todoId;
+    openButton.disabled = isPending;
+    openButton.textContent = 'Подробнее';
     const deleteButton = document.createElement('button');
     deleteButton.type = 'button';
     deleteButton.className = 'todo-open-button todo-delete-button';
     deleteButton.dataset.action = 'todo-delete';
     deleteButton.dataset.id = todoId;
-    deleteButton.disabled = isPending || isEditing;
+    deleteButton.disabled = isPending;
     deleteButton.textContent = '\u00d7';
     deleteButton.setAttribute('aria-label', '\u0423\u0434\u0430\u043b\u0438\u0442\u044c \u0437\u0430\u0434\u0430\u0447\u0443');
     deleteButton.title = '\u0423\u0434\u0430\u043b\u0438\u0442\u044c \u0437\u0430\u0434\u0430\u0447\u0443';
-    actions.append(userButton, editButton, deleteButton);
-    card.append(heading, meta, status, actions);
-
-    if (isEditing) card.append(createTodoEditForm(todo, todoEditDrafts.get(todoId)));
+    actions.append(openButton, deleteButton);
+    card.append(header, meta, assignee, actions);
     return card;
+  }
+
+  function createTodoAssignee(todo) {
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.className = 'todo-assignee';
+    button.dataset.action = 'todo-user';
+    button.dataset.userId = String(todo.userId);
+    renderTodoAssignee(button, null, todo.userId);
+
+    getUserData(todo.userId)
+      .then((user) => {
+        if (button.isConnected) renderTodoAssignee(button, user, todo.userId);
+      })
+      .catch(() => {
+        if (button.isConnected) renderTodoAssignee(button, null, todo.userId);
+      });
+
+    return button;
+  }
+
+  function renderTodoAssignee(button, user, userId) {
+    const name = user ? getUserName(user) : `Пользователь #${userId}`;
+    const avatar = user?.image
+      ? document.createElement('img')
+      : document.createElement('span');
+    avatar.className = 'todo-assignee-avatar';
+    if (avatar instanceof HTMLImageElement) {
+      avatar.src = user.image;
+      avatar.alt = '';
+      avatar.loading = 'lazy';
+    } else {
+      avatar.textContent = name.split(/\s+/).filter(Boolean).slice(0, 2).map((part) => part[0]).join('').toLocaleUpperCase();
+    }
+    const label = document.createElement('span');
+    label.className = 'todo-assignee-name';
+    label.textContent = name;
+    button.replaceChildren(avatar, label);
+    button.setAttribute('aria-label', `Открыть профиль: ${name}`);
+    button.title = name;
+  }
+
+  function openTodoDialog(id) {
+    const todo = allTodos.find((item) => item.id === Number(id));
+    if (!todo || !elements.todoDetailDialog) return;
+    activeTodoDialogId = String(todo.id);
+    renderTodoDetails(todo.id);
+    if (!elements.todoDetailDialog.open) elements.todoDetailDialog.showModal();
+  }
+
+  function renderTodoDetails(id) {
+    const todoId = Number(id);
+    const todo = allTodos.find((item) => item.id === todoId);
+    if (!todo || !elements.todoDetailDialogContent) return;
+
+    elements.todoDetailDialogTitle.textContent = 'Детали задачи';
+    const details = document.createElement('div');
+    details.className = 'todo-detail-content';
+    const title = document.createElement('h3');
+    title.className = 'todo-detail-title';
+    title.textContent = todo.todo;
+    const meta = document.createElement('p');
+    meta.className = 'todo-meta';
+    meta.textContent = `Задача #${todo.id}`;
+    const status = document.createElement('p');
+    status.className = `todo-detail-status${todo.completed ? ' is-completed' : ''}`;
+    status.textContent = todo.completed ? 'Выполнена' : 'В работе';
+    const assignee = createTodoAssignee(todo);
+    const actions = document.createElement('div');
+    actions.className = 'todo-detail-actions';
+    const editButton = document.createElement('button');
+    editButton.type = 'button';
+    editButton.className = 'cta-btn';
+    editButton.dataset.action = 'todo-edit';
+    editButton.dataset.id = String(todo.id);
+    editButton.textContent = 'Изменить';
+    actions.append(editButton);
+    details.append(title, meta, status, assignee, actions);
+    elements.todoDetailDialogContent.replaceChildren(details);
+  }
+
+  function renderTodoEditDialog(id) {
+    const todoId = Number(id);
+    const todo = allTodos.find((item) => item.id === todoId);
+    if (!todo || !elements.todoDetailDialogContent) return;
+    activeTodoDialogId = String(todoId);
+    elements.todoDetailDialogTitle.textContent = 'Изменить задачу';
+    elements.todoDetailDialogContent.replaceChildren(createTodoEditForm(todo));
+    elements.todoDetailDialogContent.querySelector('[name="todo"]')?.focus();
   }
 
   function toggleCreateTodoForm() {
@@ -654,22 +744,9 @@
     if (!form.hidden) form.querySelector('[name="todo"]')?.focus();
   }
 
-  function toggleTodoEdit(id) {
-    const todoId = String(id);
-    if (editingTodoIds.has(todoId)) {
-      editingTodoIds.delete(todoId);
-      todoEditDrafts.delete(todoId);
-    }
-    else editingTodoIds.add(todoId);
-    renderTodos();
-    if (editingTodoIds.has(todoId)) {
-      elements.todoList.querySelector(`[data-todo-id="${todoId}"] [name="todo"]`)?.focus();
-    }
-  }
-
-  function createTodoEditForm(todo, draft = {}) {
+  function createTodoEditForm(todo) {
     const form = document.createElement('form');
-    form.className = 'todo-form';
+    form.className = 'todo-form todo-dialog-edit-form';
     form.dataset.todoForm = 'update';
     form.dataset.id = todo.id;
     const titleLabel = document.createElement('label');
@@ -678,7 +755,7 @@
     titleInput.name = 'todo';
     titleInput.required = true;
     titleInput.maxLength = 200;
-    titleInput.value = draft.todo ?? todo.todo;
+    titleInput.value = todo.todo;
     titleLabel.append(titleInput);
 
     const userLabel = document.createElement('label');
@@ -689,7 +766,7 @@
     userInput.min = '1';
     userInput.step = '1';
     userInput.required = true;
-    userInput.value = draft.userId ?? todo.userId;
+    userInput.value = todo.userId;
     userLabel.append(userInput);
 
     const completedLabel = document.createElement('label');
@@ -697,7 +774,7 @@
     const completedInput = document.createElement('input');
     completedInput.name = 'completed';
     completedInput.type = 'checkbox';
-    completedInput.checked = draft.completed ?? todo.completed;
+    completedInput.checked = todo.completed;
     completedLabel.append(completedInput, document.createTextNode(' Выполнена'));
     const submit = document.createElement('button');
     submit.type = 'submit';
@@ -706,7 +783,7 @@
     const cancel = document.createElement('button');
     cancel.type = 'button';
     cancel.className = 'todo-open-button';
-    cancel.dataset.action = 'todo-edit';
+    cancel.dataset.action = 'todo-edit-cancel';
     cancel.dataset.id = todo.id;
     cancel.textContent = 'Отмена';
     form.append(titleLabel, userLabel, completedLabel, submit, cancel);
@@ -729,7 +806,6 @@
 
     const data = new FormData(form);
     let pendingUpdateId = null;
-    const editCard = form.closest('.todo-card');
     try {
       if (form.dataset.todoForm === 'create') {
         const createdTodo = await window.fakeTodoApi.create({
@@ -755,17 +831,15 @@
         const id = form.dataset.id;
         pendingUpdateId = String(id);
         pendingTodoIds.add(pendingUpdateId);
-        editCard?.querySelectorAll('.todo-actions button').forEach((button) => { button.disabled = true; });
         const updatedTodo = await window.fakeTodoApi.update(id, {
           todo: data.get('todo'),
           userId: Number(data.get('userId')),
           completed: data.get('completed') === 'on',
         });
-        editingTodoIds.delete(String(id));
-        todoEditDrafts.delete(String(id));
         allTodos = allTodos.map((todo) => todo.id === updatedTodo.id ? updatedTodo : todo);
         renderTodos();
         const listUpdated = await loadTodos();
+        renderTodoDetails(updatedTodo.id);
         setTodoNotice(
           listUpdated ? 'Изменения сохранены.' : 'Изменения сохранены, но список не обновился. Попробуйте обновить его.',
           listUpdated ? 'success' : 'error',
@@ -782,11 +856,7 @@
       }
       if (pendingUpdateId) {
         pendingTodoIds.delete(pendingUpdateId);
-        if (editCard?.isConnected) {
-          editCard.querySelectorAll('.todo-actions button').forEach((button) => { button.disabled = false; });
-        } else {
-          renderTodos();
-        }
+        renderTodos();
       }
     }
   }
@@ -795,7 +865,10 @@
     if (pendingTodoIds.has(String(id))) return;
     pendingTodoIds.add(String(id));
     button.disabled = true;
-    button.textContent = '\u041E\u0431\u043D\u043E\u0432\u043B\u044F\u0435\u043C\u2026';
+    button.setAttribute('aria-busy', 'true');
+    const statusLabel = button.closest('.todo-checkbox-status');
+    statusLabel?.classList.add('is-pending');
+    if (statusLabel?.lastChild) statusLabel.lastChild.textContent = ' Сохраняем…';
     try {
       const todo = allTodos.find((item) => item.id === Number(id));
       if (!todo) return;
@@ -817,7 +890,6 @@
     try {
       await window.fakeTodoApi.delete(id);
       allTodos = allTodos.filter((todo) => todo.id !== Number(id));
-      editingTodoIds.delete(String(id));
       renderTodos();
       await loadTodos();
     } catch (error) {

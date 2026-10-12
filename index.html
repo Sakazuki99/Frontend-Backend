@@ -177,6 +177,14 @@
     <div id="user-profile-content" class="task-box user-profile-content" aria-live="polite"></div>
   </section>
 
+  <dialog id="todo-detail-dialog" class="todo-detail-dialog" aria-labelledby="todo-detail-dialog-title">
+    <div class="todo-user-dialog-header">
+      <h2 id="todo-detail-dialog-title">Детали задачи</h2>
+      <button class="todo-user-dialog-close" type="button" data-action="todo-detail-close" aria-label="Закрыть окно">×</button>
+    </div>
+    <div id="todo-detail-dialog-content" class="todo-detail-dialog-content" aria-live="polite"></div>
+  </dialog>
+
   <dialog id="todo-user-dialog" class="todo-user-dialog" aria-labelledby="todo-user-dialog-title">
     <div class="todo-user-dialog-header">
       <h2 id="todo-user-dialog-title">Данные пользователя</h2>
