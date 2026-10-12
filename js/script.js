@@ -9,6 +9,7 @@
   const elements = {};
   let todoLoadVersion = 0;
   let todoPage = 1;
+  let todoSearchTimer = 0;
   const todosPerPage = 12;
   let allTodos = [];
   const userCache = new Map();
@@ -60,8 +61,11 @@
     window.addEventListener('hashchange', handleUserRoute);
     handleUserRoute();
     elements.todoSearch?.addEventListener('input', () => {
-      todoPage = 1;
-      renderTodos();
+      window.clearTimeout(todoSearchTimer);
+      todoSearchTimer = window.setTimeout(() => {
+        todoPage = 1;
+        renderTodos();
+      }, 160);
     });
     elements.todoFilter?.addEventListener('change', () => {
       todoPage = 1;
@@ -476,10 +480,18 @@
 
     const requestVersion = ++todoLoadVersion;
     elements.todoList.setAttribute('aria-busy', 'true');
-    if (elements.todoRefresh) elements.todoRefresh.disabled = true;
+    if (elements.todoRefresh) {
+      elements.todoRefresh.disabled = true;
+      elements.todoRefresh.setAttribute('aria-busy', 'true');
+    }
     if (allTodos.length === 0) {
       elements.todoCount.textContent = 'Загружаем задачи…';
-      elements.todoList.textContent = 'Подождите, загружаем список.';
+      elements.todoList.replaceChildren(...Array.from({ length: 6 }, () => {
+        const skeleton = document.createElement('div');
+        skeleton.className = 'todo-skeleton';
+        skeleton.setAttribute('aria-hidden', 'true');
+        return skeleton;
+      }));
     }
 
     try {
@@ -518,7 +530,10 @@
     } finally {
       if (requestVersion === todoLoadVersion) {
         elements.todoList.removeAttribute('aria-busy');
-        if (elements.todoRefresh) elements.todoRefresh.disabled = false;
+        if (elements.todoRefresh) {
+          elements.todoRefresh.disabled = false;
+          elements.todoRefresh.removeAttribute('aria-busy');
+        }
       }
     }
   }

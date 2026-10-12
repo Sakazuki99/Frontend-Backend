@@ -1723,6 +1723,27 @@ body{
   height: 17px;
 }
 
+.todo-refresh-button[aria-busy="true"] svg{
+  animation: todo-refresh-spin 0.9s linear infinite;
+}
+
+@keyframes todo-refresh-spin{
+  to{ transform: rotate(360deg); }
+}
+
+.todo-skeleton{
+  min-height: 188px;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: linear-gradient(100deg, var(--card-bg) 35%, var(--chip-bg) 50%, var(--card-bg) 65%);
+  background-size: 220% 100%;
+  animation: todo-skeleton-shimmer 1.35s ease-in-out infinite;
+}
+
+@keyframes todo-skeleton-shimmer{
+  to{ background-position-x: -220%; }
+}
+
 .todo-create-form{
   align-items: end;
   padding: 18px;
@@ -2226,8 +2247,11 @@ body{
 @media (prefers-reduced-motion: reduce){
   .todo-progress span,
   .todo-card,
-  .navbar{
+  .navbar,
+  .todo-refresh-button[aria-busy="true"] svg,
+  .todo-skeleton{
     transition-duration: 0.01ms;
+    animation-duration: 0.01ms;
     scroll-behavior: auto;
   }
 }
