@@ -2032,6 +2032,109 @@ body{
   padding: 15px 0;
 }
 
+.user-tasks-section{
+  max-width: 940px;
+  padding-top: 24px;
+  margin: 36px auto 0;
+  border-top: 1px solid var(--line);
+}
+
+.user-tasks-heading{
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+.user-tasks-heading h2,
+.user-tasks-error h2{
+  margin: 0;
+  font-size: 19px;
+  letter-spacing: -0.02em;
+}
+
+.user-tasks-heading p,
+.user-tasks-error p{
+  margin: 0;
+  color: var(--ink-soft);
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+}
+
+.user-task-list{
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 260px), 1fr));
+  gap: 10px;
+}
+
+.user-task-card{
+  display: grid;
+  min-width: 0;
+  min-height: 105px;
+  align-content: space-between;
+  gap: 14px;
+  padding: 15px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--bg);
+  transition: border-color 0.16s ease, transform 0.16s ease;
+}
+
+.user-task-card:hover{
+  transform: translateY(-2px);
+  border-color: color-mix(in srgb, var(--accent) 40%, var(--line));
+}
+
+.user-task-card h3{
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+}
+
+.user-task-meta{
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  color: var(--ink-faint);
+  font-size: 11px;
+}
+
+.user-task-status{
+  padding: 4px 8px;
+  border-radius: 999px;
+  background: var(--accent-soft);
+  color: var(--accent);
+  font-weight: 700;
+}
+
+.user-task-status.is-completed{
+  background: color-mix(in srgb, var(--success) 12%, var(--card-bg));
+  color: var(--success);
+}
+
+.user-tasks-empty{
+  margin: 0;
+  padding: 20px;
+  border: 1px dashed var(--line);
+  border-radius: 12px;
+  color: var(--ink-soft);
+  font-size: 13px;
+  text-align: center;
+}
+
+.user-tasks-error{
+  display: grid;
+  justify-items: start;
+  gap: 10px;
+}
+
+.user-tasks-error .todo-open-button{
+  margin-top: 3px;
+}
+
 @media (max-width: 760px){
   .navbar{
     position: sticky;
@@ -2124,6 +2227,12 @@ body{
   .user-profile-content .user-details-list > div{
     grid-template-columns: 1fr;
     gap: 4px;
+  }
+
+  .user-tasks-heading{
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 6px;
   }
 }
 

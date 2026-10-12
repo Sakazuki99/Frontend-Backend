@@ -102,6 +102,15 @@
     return request(`${usersUrl}/${userId}`);
   }
 
+  async function getByUserId(id) {
+    const userId = Number(id);
+    if (!Number.isInteger(userId) || userId < 1) return [];
+    const todos = await getAll();
+    return todos
+      .filter((todo) => Number(todo.userId) === userId)
+      .sort((left, right) => Number(right.id) - Number(left.id));
+  }
+
   async function create(input) {
     const fields = validateTodoFields(input, true);
     const payload = {
@@ -157,6 +166,7 @@
     getAll,
     getById,
     getUserById,
+    getByUserId,
     create,
     update,
     remove,

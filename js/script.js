@@ -168,6 +168,9 @@
       case 'user-profile-retry':
         loadUserProfile(control.dataset.userId);
         break;
+      case 'user-tasks-retry':
+        loadUserProfile(control.dataset.userId);
+        break;
     }
   }
 
@@ -266,16 +269,84 @@
     renderUserLoading(elements.userProfileContent, 'Загружаем профиль пользователя…');
 
     try {
-      const user = await getUserData(id);
+      const [userResult, todosResult] = await Promise.allSettled([
+        getUserData(id),
+        window.fakeTodoApi.getByUserId(id),
+      ]);
       if (requestVersion !== userProfileRequestVersion) return;
+      if (userResult.status === 'rejected') throw userResult.reason;
+      const user = userResult.value;
       if (!user) throw new Error(`Пользователь с ID ${id} не найден.`);
       elements.userProfileTitle.textContent = getUserName(user);
-      elements.userProfileContent.replaceChildren(createUserDetails(user, false));
+      const userTasks = todosResult.status === 'fulfilled'
+        ? createUserTasksSection(todosResult.value)
+        : createUserTasksError(id, todosResult.reason.message);
+      elements.userProfileContent.replaceChildren(createUserDetails(user, false), userTasks);
       elements.userProfileContent.removeAttribute('aria-busy');
     } catch (error) {
       if (requestVersion !== userProfileRequestVersion) return;
       renderUserError(elements.userProfileContent, error.message, 'user-profile-retry', id);
     }
+  }
+
+  function createUserTasksSection(todos) {
+    const section = document.createElement('section');
+    section.className = 'user-tasks-section';
+    const completedCount = todos.filter((todo) => todo.completed).length;
+    const heading = document.createElement('div');
+    heading.className = 'user-tasks-heading';
+    const title = document.createElement('h2');
+    title.textContent = 'Задачи пользователя';
+    const summary = document.createElement('p');
+    summary.textContent = `Всего: ${todos.length} · В работе: ${todos.length - completedCount} · Выполнено: ${completedCount}`;
+    heading.append(title, summary);
+    section.append(heading);
+
+    if (todos.length === 0) {
+      const empty = document.createElement('p');
+      empty.className = 'user-tasks-empty';
+      empty.textContent = 'У этого пользователя пока нет задач.';
+      section.append(empty);
+      return section;
+    }
+
+    const list = document.createElement('div');
+    list.className = 'user-task-list';
+    todos.forEach((todo) => {
+      const card = document.createElement('article');
+      card.className = `user-task-card${todo.completed ? ' is-completed' : ''}`;
+      const name = document.createElement('h3');
+      name.textContent = todo.todo;
+      const meta = document.createElement('div');
+      meta.className = 'user-task-meta';
+      const idLabel = document.createElement('span');
+      idLabel.textContent = `Задача #${todo.id}`;
+      const status = document.createElement('span');
+      status.className = `user-task-status${todo.completed ? ' is-completed' : ''}`;
+      status.textContent = todo.completed ? 'Выполнена' : 'В работе';
+      meta.append(idLabel, status);
+      card.append(name, meta);
+      list.append(card);
+    });
+    section.append(list);
+    return section;
+  }
+
+  function createUserTasksError(userId, message) {
+    const section = document.createElement('section');
+    section.className = 'user-tasks-section user-tasks-error';
+    const title = document.createElement('h2');
+    title.textContent = 'Не удалось загрузить задачи';
+    const description = document.createElement('p');
+    description.textContent = message || 'Проверьте подключение и попробуйте ещё раз.';
+    const retry = document.createElement('button');
+    retry.type = 'button';
+    retry.className = 'todo-open-button';
+    retry.dataset.action = 'user-tasks-retry';
+    retry.dataset.userId = String(userId);
+    retry.textContent = 'Повторить загрузку';
+    section.append(title, description, retry);
+    return section;
   }
 
   function getUserName(user) {
