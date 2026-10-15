@@ -38,6 +38,7 @@
   let userDirectory = null; 
   let sortFieldSeq = 0;
   const el = {};
+  const setText = (node, text) => { if (node) node.textContent = text; };
 
   const sortOptions = [
     ['newest', 'Сначала новые'],
@@ -517,20 +518,32 @@
     }
 
     try {
-      const todos = await window.fakeTodoApi.getAll();
+      let todos;
+      try {
+        todos = await window.fakeTodoApi.getAll();
+      } catch (error) {
+        if (version !== state.loadVersion) return false;
+        setText(el['todo-count'], 'Не удалось обновить список');
+        setText(el['todo-summary'], 'Проверьте подключение и попробуйте ещё раз');
+        if (el.todoProgress) el.todoProgress.hidden = true;
+        if (state.todos.length === 0) el['todo-list'].replaceChildren(createLoadError());
+        setTodoNotice(error.message, 'error');
+        return false;
+      }
       if (version !== state.loadVersion) return false;
+
       state.todos = todos;
       setTodoNotice('');
-      renderTodos();
+      try {
+        renderTodos();
+      } catch (error) {
+        
+        console.error(error);
+        el['todo-list'].replaceChildren(createLoadError());
+        setTodoNotice(`Не удалось отобразить задачи: ${error.message}`, 'error');
+        return false;
+      }
       return true;
-    } catch (error) {
-      if (version !== state.loadVersion) return false;
-      el['todo-count'].textContent = 'Не удалось обновить список';
-      el['todo-summary'].textContent = 'Проверьте подключение и попробуйте ещё раз';
-      el.todoProgress.hidden = true;
-      if (state.todos.length === 0) el['todo-list'].replaceChildren(createLoadError());
-      setTodoNotice(error.message, 'error');
-      return false;
     } finally {
       if (version === state.loadVersion) setLoading(false);
     }
@@ -545,12 +558,12 @@
     const completed = todos.filter((todo) => todo.completed).length;
     const completion = todos.length ? Math.round((completed / todos.length) * 100) : 0;
 
-    el['todo-summary'].textContent = `${todos.length - completed} в работе · ${completed} выполнено`;
-    el.todoProgress.setAttribute('aria-valuenow', String(completion));
-    el.todoProgress.setAttribute('aria-valuetext', `${completion}% выполнено`);
-    el['todo-progress-fill'].style.width = `${completion}%`;
-    el.todoProgress.hidden = todos.length === 0;
-    el['todo-search-clear'].hidden = !search;
+    setText(el['todo-summary'], `${todos.length - completed} в работе · ${completed} выполнено`);
+    el.todoProgress?.setAttribute('aria-valuenow', String(completion));
+    el.todoProgress?.setAttribute('aria-valuetext', `${completion}% выполнено`);
+    if (el['todo-progress-fill']) el['todo-progress-fill'].style.width = `${completion}%`;
+    if (el.todoProgress) el.todoProgress.hidden = todos.length === 0;
+    if (el['todo-search-clear']) el['todo-search-clear'].hidden = !search;
 
     const filtered = sortTodos(todos.filter((todo) => {
       const text = `${todo.todo} ${todo.userId} ${todo.id}`.toLocaleLowerCase();
@@ -709,6 +722,8 @@
   }
 
   
+  
+  
   function enqueueSave(todoId, work) {
     const task = (saveQueue.get(todoId) ?? Promise.resolve()).then(work); 
     saveQueue.set(todoId, task);
@@ -739,7 +754,7 @@
       } catch (error) {
         const current = findTodo(todoId);
         if (current) {
-          // Откатываем только те поля, которые пользователь не успел изменить повторно.
+         
           const reverted = { ...current };
           Object.keys(changes).forEach((key) => { if (current[key] === changes[key]) reverted[key] = previous[key]; });
           replaceTodo(reverted);
@@ -783,7 +798,7 @@
 
   function createTask1Element(trigger) {
     if (!document.querySelector('.new-div')) document.body.append(h('div', { className: 'new-div', textContent: 'Я новый элемент' }));
-    if (trigger) trigger.disabled = true; // элемент создаётся один раз
+    if (trigger) trigger.disabled = true; 
   }
 
   
@@ -867,7 +882,7 @@
     setTheme(theme);
   }
 
-  // Сохраняем тему только после явного выбора пользователя, иначе системная тема никогда не применится.
+  
   function setTheme(theme, persist = false) {
     document.documentElement.dataset.theme = theme;
     const themeButton = el['theme-toggle-btn'];

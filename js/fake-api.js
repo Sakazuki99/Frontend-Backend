@@ -1,7 +1,7 @@
 (() => {
   const todosUrl = 'https://dummyjson.com/todos';
-  const usersUrl = 'https://dummyjson.com/users';
   const requestTimeoutMs = 12000;
+  const usersUrl = 'https://dummyjson.com/users';
   const updatedTodos = new Map();
   const createdTodos = new Map();
   const deletedTodoIds = new Set();
@@ -39,6 +39,7 @@
       if (error.name === 'AbortError' || error.name === 'TimeoutError') {
         throw new Error('API не ответил за 12 секунд. Проверьте подключение и попробуйте ещё раз.');
       }
+      if (error.name === 'TypeError') throw new Error('Нет соединения с сервером.');
       throw error;
     } finally {
       clearTimeout(timeoutId);
@@ -105,12 +106,6 @@
     }
   }
 
-  async function requireTodo(id) {
-    const todo = await getById(id);
-    if (!todo) throw new Error(`Задача с ID ${id} не найдена.`);
-    return todo;
-  }
-
   async function getUserById(id) {
     const userId = toId(id);
     return userId ? request(`${usersUrl}/${userId}`) : null;
@@ -145,27 +140,33 @@
     return { ...todo };
   }
 
-  async function update(id, input) {
-    const todoId = Number(id);
-    const fields = validateTodoFields(input);
-    const currentTodo = await requireTodo(todoId);
+  const notFound = (id) => new Error(`Задача с ID ${id} не найдена.`);
 
-    const result = await sendJson(`${todosUrl}/${todoId}`, 'PATCH', fields);
-    const updatedTodo = { ...currentTodo, ...result, ...fields, id: todoId };
+  
+  async function update(id, input) {
+    const todoId = toId(id);
+    if (!todoId || deletedTodoIds.has(todoId)) throw notFound(id);
+    const fields = validateTodoFields(input);
+
+    const isLocal = createdTodos.has(todoId);
+    const result = isLocal ? {} : await sendJson(`${todosUrl}/${todoId}`, 'PATCH', fields);
+    const base = createdTodos.get(todoId) ?? updatedTodos.get(todoId) ?? {};
+    const updatedTodo = { ...base, ...result, ...fields, id: todoId };
     updatedTodos.set(todoId, updatedTodo);
-    if (createdTodos.has(todoId)) createdTodos.set(todoId, updatedTodo);
+    if (isLocal) createdTodos.set(todoId, updatedTodo);
     return { ...updatedTodo };
   }
 
   async function remove(id) {
-    const todoId = Number(id);
-    const currentTodo = await requireTodo(todoId);
+    const todoId = toId(id);
+    if (!todoId || deletedTodoIds.has(todoId)) throw notFound(id);
 
-    const result = await request(`${todosUrl}/${todoId}`, { method: 'DELETE' });
+    const result = createdTodos.has(todoId) ? {} : await request(`${todosUrl}/${todoId}`, { method: 'DELETE' });
+    const current = createdTodos.get(todoId) ?? updatedTodos.get(todoId) ?? {};
     deletedTodoIds.add(todoId);
     createdTodos.delete(todoId);
     updatedTodos.delete(todoId);
-    return { ...currentTodo, ...result, id: todoId };
+    return { ...current, ...result, id: todoId };
   }
 
   window.fakeTodoApi = Object.freeze({

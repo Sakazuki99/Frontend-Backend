@@ -4,9 +4,40 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Команда — Резюме, Проект и Задания</title>
+  <meta name="description" content="Учебный сайт команды: профили участников, практические задания и менеджер задач.">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='22'/%3E%3Ccircle cx='50' cy='50' r='24' fill='%23fff'/%3E%3C/svg%3E">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap">
   <link rel="stylesheet" href="css/style.css">
+  <script>try{var t=localStorage.getItem('theme');if(t!=='dark'&&t!=='light')t=matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light';document.documentElement.dataset.theme=t}catch(e){}</script>
 </head>
 <body>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <symbol id="avatar-p1" viewBox="0 0 100 100">
+      <rect width="100" height="100" fill="#000"/>
+      <circle cx="38" cy="40" r="22" fill="#fff"/>
+      <rect x="55" y="55" width="40" height="40" fill="#fff" transform="rotate(20 55 55)"/>
+    </symbol>
+    <symbol id="avatar-p2" viewBox="0 0 100 100">
+      <rect width="100" height="100" fill="#000"/>
+      <polygon points="50,15 85,80 15,80" fill="#fff"/>
+      <circle cx="50" cy="35" r="10" fill="#000"/>
+    </symbol>
+    <symbol id="avatar-p3" viewBox="0 0 100 100">
+      <rect width="100" height="100" fill="#000"/>
+      <rect x="20" y="20" width="30" height="30" fill="#fff"/>
+      <rect x="55" y="55" width="30" height="30" fill="#fff"/>
+    </symbol>
+    <symbol id="avatar-p4" viewBox="0 0 100 100">
+      <rect width="100" height="100" fill="#000"/>
+      <path d="M15 80 Q50 15 85 80 Z" fill="#fff"/>
+    </symbol>
+  </defs>
+</svg>
+
 <div class="wrap">
   <nav class="navbar" id="navbar">
     <button class="active" data-page="home">Главная</button>
@@ -17,14 +48,12 @@
     <button data-page="task2">Задание 2</button>
     <button data-page="task3">Задание 3</button>
     <button data-page="todos">Менеджер задач</button>
-    
     <div class="nav-divider"></div>
-    <button id="theme-toggle-btn" class="theme-toggle" data-action="toggle-theme" aria-label="Переключить темную тему">🌙 Темная</button>
-    
+    <button id="theme-toggle-btn" class="theme-toggle" data-action="toggle-theme" type="button">🌙 Тёмная</button>
     <button data-page="rubik">Кубик Рубика</button>
     <div id="member-tabs" hidden>
       <div class="nav-divider"></div>
-      <button data-target="p1" data-member="p1">Ибрагим</button>
+      <button class="active" data-target="p1" data-member="p1">Ибрагим</button>
       <button data-target="p2" data-member="p2">Алиби</button>
       <button data-target="p3" data-member="p3">Нурболат</button>
       <button data-target="p4" data-member="p4">Алихан</button>
@@ -46,45 +75,47 @@
       <p class="label">Участники</p>
       <div class="roster-grid">
         <button class="roster-item" data-action="open-member" data-member="p1">
-          <div class="avatar">
-            <svg viewBox="0 0 100 100">
-              <rect width="100" height="100" fill="#000"/>
-              <circle cx="38" cy="40" r="22" fill="#fff"/>
-              <rect x="55" y="55" width="40" height="40" fill="#fff" transform="rotate(20 55 55)"/>
-            </svg>
-          </div>
+          <div class="avatar"><svg viewBox="0 0 100 100"><use href="#avatar-p1"/></svg></div>
           <div class="name">Ибрагим</div>
         </button>
         <button class="roster-item" data-action="open-member" data-member="p2">
-          <div class="avatar">
-            <svg viewBox="0 0 100 100">
-              <rect width="100" height="100" fill="#000"/>
-              <polygon points="50,15 85,80 15,80" fill="#fff"/>
-              <circle cx="50" cy="35" r="10" fill="#000"/>
-            </svg>
-          </div>
+          <div class="avatar"><svg viewBox="0 0 100 100"><use href="#avatar-p2"/></svg></div>
           <div class="name">Алиби</div>
         </button>
         <button class="roster-item" data-action="open-member" data-member="p3">
-          <div class="avatar">
-            <svg viewBox="0 0 100 100">
-              <rect width="100" height="100" fill="#000"/>
-              <rect x="20" y="20" width="30" height="30" fill="#fff"/>
-              <rect x="55" y="55" width="30" height="30" fill="#fff"/>
-            </svg>
-          </div>
+          <div class="avatar"><svg viewBox="0 0 100 100"><use href="#avatar-p3"/></svg></div>
           <div class="name">Нурболат</div>
         </button>
         <button class="roster-item" data-action="open-member" data-member="p4">
-          <div class="avatar">
-            <svg viewBox="0 0 100 100">
-              <rect width="100" height="100" fill="#000"/>
-              <path d="M15 80 Q50 15 85 80 Z" fill="#fff"/>
-            </svg>
-          </div>
+          <div class="avatar"><svg viewBox="0 0 100 100"><use href="#avatar-p4"/></svg></div>
           <div class="name">Алихан</div>
         </button>
       </div>
+    </div>
+  </section>
+
+  <section class="page" id="page-task1">
+    <div class="masthead">
+      <h1>Практическое задание 1</h1>
+      <p>Работа с DOM-деревом на JavaScript</p>
+    </div>
+
+    <div class="section">
+      <h3>Условие задачи</h3>
+      <ul class="highlights">
+        <li>Найдите элемент по ID и измените его текст на «Привет, мир!».</li>
+        <li>Создайте новый элемент &lt;div&gt; с классом <mark>new-div</mark> и текстом «Я новый элемент», добавив его в конец &lt;body&gt;.</li>
+        <li>Удалите элемент с классом <mark>old-element</mark>.</li>
+        <li>Создайте абзац с текстом «Это изменяемый абзац.» и изменяйте его цвет и размер шрифта по клику.</li>
+      </ul>
+    </div>
+
+    <div class="section">
+      <h3>Результат выполнения</h3>
+      <div id="target-element" class="task1-target">Исходный текст элемента.</div>
+      <div class="old-element task1-old-element">Этот элемент будет удалён скриптом.</div>
+      <div id="task1-result"></div>
+      <button class="cta task1-create-button" data-action="create-task1-element">Создать новый элемент</button>
     </div>
   </section>
 
@@ -95,9 +126,7 @@
     </div>
 
     <div class="task-box">
-      <div id="task2-target-element" class="demo-box card feature">
-        Тестовый блок
-      </div>
+      <div id="task2-target-element" class="demo-box card feature">Тестовый блок</div>
 
       <div class="actions">
         <button id="toggle-btn" class="cta-btn" data-action="toggle-task2-class">Переключить класс active</button>
@@ -110,69 +139,6 @@
     </div>
   </section>
 
-  <section class="page" id="page-todos">
-    <div class="masthead">
-      <h1>Менеджер задач</h1>
-      <p>Задачи загружаются из DummyJSON. Добавление, изменение и удаление имитируются API и не сохраняются на сервере — изменения остаются до перезагрузки страницы.</p>
-    </div>
-    <div class="task-box todo-manager">
-      <div class="todo-toolbar">
-        <p id="todo-count" class="todo-count" aria-live="polite">Загрузка задач…</p>
-        <div class="todo-toolbar-actions">
-          <button class="cta-btn" type="button" data-action="todo-create-toggle" aria-expanded="false" aria-controls="todo-create-form">Добавить задачу</button>
-          <button class="cta-btn" type="button" data-action="todos-refresh">Обновить</button>
-        </div>
-      </div>
-      <form id="todo-create-form" class="todo-form todo-create-form" data-todo-form="create" hidden>
-        <label>Название задачи
-          <input name="todo" type="text" required maxlength="200" placeholder="Например, проверить CRUD">
-        </label>
-        <label>ID пользователя
-          <input name="userId" type="number" min="1" step="1" value="1" required>
-        </label>
-        <label class="todo-checkbox-label">
-          <input name="completed" type="checkbox"> Выполнена
-        </label>
-        <button class="todo-open-button" type="submit">Добавить задачу</button>
-      </form>
-      <div class="todo-filters">
-        <label for="todo-search">Поиск задач</label>
-        <input id="todo-search" type="search" placeholder="Название, ID задачи или пользователя">
-        <label for="todo-filter">Статус</label>
-        <select id="todo-filter">
-          <option value="all">Все задачи</option>
-          <option value="active">В работе</option>
-          <option value="completed">Выполненные</option>
-        </select>
-      </div>
-      <p id="todo-notice" class="todo-notice" role="status" aria-live="polite"></p>
-      <div id="todo-list" class="todo-list" aria-live="polite"></div>
-      <nav id="todo-pagination" class="todo-pagination" aria-label="Страницы задач" hidden>
-        <button class="todo-open-button" type="button" data-action="todo-page" data-direction="-1">Назад</button>
-        <span data-page-label aria-live="polite">Страница 1</span>
-        <button class="todo-open-button" type="button" data-action="todo-page" data-direction="1">Дальше</button>
-      </nav>
-    </div>
-  </section>
-
-  <section class="page user-profile-page" id="page-user">
-    <div class="masthead">
-      <a class="todo-open-button user-profile-back" href="#todos">← К менеджеру задач</a>
-      <h1 id="user-profile-title">Профиль пользователя</h1>
-      <p>Данные загружены из DummyJSON.</p>
-    </div>
-    <div id="user-profile-content" class="task-box user-profile-content" aria-live="polite"></div>
-  </section>
-
-  <dialog id="todo-user-dialog" class="todo-user-dialog" aria-labelledby="todo-user-dialog-title">
-    <div class="todo-user-dialog-header">
-      <h2 id="todo-user-dialog-title">Данные пользователя</h2>
-      <button class="todo-user-dialog-close" type="button" data-action="todo-user-close" aria-label="Закрыть окно">×</button>
-    </div>
-    <div id="todo-user-dialog-content" class="todo-user-dialog-content" aria-live="polite"></div>
-  </dialog>
-
-  
   <section class="page" id="page-task3">
     <div class="masthead">
       <h1>Задание 3: Генератор таблицы и статистика</h1>
@@ -196,6 +162,92 @@
     </div>
   </section>
 
+  <section class="page" id="page-todos">
+    <div class="masthead">
+      <h1>Менеджер задач</h1>
+      <p>Соберите дела в одном месте, отмечайте прогресс и быстро находите нужное.</p>
+      <p class="todo-api-note">Данные задач загружаются из DummyJSON. Добавление, изменение и удаление задач имитируются и сбрасываются после перезагрузки страницы.</p>
+    </div>
+    <div class="task-box todo-manager">
+      <div class="todo-toolbar">
+        <div class="todo-overview">
+          <p id="todo-count" class="todo-count" aria-live="polite">Загрузка задач…</p>
+          <p id="todo-summary" class="todo-summary">Считаем задачи…</p>
+          <div class="todo-progress" role="progressbar" aria-label="Выполненные задачи" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
+            <span id="todo-progress-fill"></span>
+          </div>
+        </div>
+        <div class="todo-toolbar-actions">
+          <button class="cta-btn todo-create-toggle" type="button" data-action="todo-create-toggle" aria-expanded="false" aria-controls="todo-create-form"><span aria-hidden="true">＋</span> Добавить задачу</button>
+          <button class="cta-btn todo-refresh-button" type="button" data-action="todos-refresh"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 7v5h-5"></path><path d="M4 17v-5h5"></path><path d="M5.6 9a7 7 0 0 1 11.6-2L20 12M4 12l2.8 5a7 7 0 0 0 11.6-2"></path></svg> Обновить</button>
+        </div>
+      </div>
+      <form id="todo-create-form" class="todo-form todo-create-form" data-todo-form="create" hidden>
+        <label>Название задачи
+          <input name="todo" type="text" required maxlength="200" placeholder="Например, проверить CRUD">
+        </label>
+        <label>ID пользователя
+          <input name="userId" type="number" min="1" step="1" value="1" required>
+        </label>
+        <label class="todo-checkbox-label">
+          <input name="completed" type="checkbox"> Выполнена
+        </label>
+        <button class="todo-open-button" type="submit">Добавить задачу</button>
+      </form>
+      <div class="todo-filters">
+        <div class="todo-filter-field todo-filter-search">
+          <label for="todo-search">Найти задачу</label>
+          <div class="todo-search-control">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"></circle><path d="m16 16 4 4"></path></svg>
+            <input id="todo-search" type="search" placeholder="Название, ID задачи или пользователя">
+            <button id="todo-search-clear" class="todo-search-clear" type="button" data-action="todo-search-clear" aria-label="Очистить поиск" title="Очистить поиск" hidden>×</button>
+          </div>
+        </div>
+        <div class="todo-filter-field">
+          <label for="todo-filter">Показать</label>
+          <select id="todo-filter">
+            <option value="all">Все задачи</option>
+            <option value="active">В работе</option>
+            <option value="completed">Выполненные</option>
+          </select>
+        </div>
+        <div id="todo-sort-field"></div>
+      </div>
+      <p id="todo-notice" class="todo-notice" role="status" aria-live="polite"></p>
+      <div id="todo-list" class="todo-list"></div>
+      <nav id="todo-pagination" class="todo-pagination" aria-label="Страницы задач" hidden>
+        <button class="todo-open-button" type="button" data-action="todo-page" data-direction="-1">Назад</button>
+        <span data-page-label aria-live="polite">Страница 1</span>
+        <button class="todo-open-button" type="button" data-action="todo-page" data-direction="1">Дальше</button>
+      </nav>
+    </div>
+  </section>
+
+  <section class="page user-profile-page" id="page-user">
+    <div class="masthead">
+      <a class="todo-open-button user-profile-back" href="#todos">← К менеджеру задач</a>
+      <h1 id="user-profile-title">Профиль пользователя</h1>
+      <p>Данные загружены из DummyJSON.</p>
+    </div>
+    <div id="user-profile-content" class="task-box user-profile-content" aria-live="polite"></div>
+  </section>
+
+  <dialog id="todo-detail-dialog" class="todo-detail-dialog" aria-labelledby="todo-detail-dialog-title">
+    <div class="todo-user-dialog-header">
+      <h2 id="todo-detail-dialog-title">Детали задачи</h2>
+      <button class="todo-user-dialog-close" type="button" data-action="todo-detail-close" aria-label="Закрыть окно">×</button>
+    </div>
+    <div id="todo-detail-dialog-content" class="todo-detail-dialog-content" aria-live="polite"></div>
+  </dialog>
+
+  <dialog id="todo-user-dialog" class="todo-user-dialog" aria-labelledby="todo-user-dialog-title">
+    <div class="todo-user-dialog-header">
+      <h2 id="todo-user-dialog-title">Данные пользователя</h2>
+      <button class="todo-user-dialog-close" type="button" data-action="todo-user-close" aria-label="Закрыть окно">×</button>
+    </div>
+    <div id="todo-user-dialog-content" class="todo-user-dialog-content" aria-live="polite"></div>
+  </dialog>
+
   <section class="page" id="page-resume">
     <div class="masthead">
       <h1>Состав команды</h1>
@@ -204,19 +256,11 @@
 
     <div class="panel active" id="p1">
       <div class="profile-head">
-        <div class="avatar-box">
-          <svg viewBox="0 0 100 100">
-            <rect width="100" height="100" fill="#000"/>
-            <circle cx="38" cy="40" r="22" fill="#fff"/>
-            <rect x="55" y="55" width="40" height="40" fill="#fff" transform="rotate(20 55 55)"/>
-          </svg>
-        </div>
+        <div class="avatar-box"><svg viewBox="0 0 100 100"><use href="#avatar-p1"/></svg></div>
         <div class="info">
           <h2>Эгембердиев Ибрагим</h2>
           <div class="role">Начинающий Java-разработчик</div>
-          <div class="meta">
-            <div><strong>19</strong> лет</div>
-          </div>
+          <div class="meta"><div><strong>19</strong> лет</div></div>
         </div>
       </div>
 
@@ -246,19 +290,11 @@
 
     <div class="panel" id="p2">
       <div class="profile-head">
-        <div class="avatar-box">
-          <svg viewBox="0 0 100 100">
-            <rect width="100" height="100" fill="#000"/>
-            <polygon points="50,15 85,80 15,80" fill="#fff"/>
-            <circle cx="50" cy="35" r="10" fill="#000"/>
-          </svg>
-        </div>
+        <div class="avatar-box"><svg viewBox="0 0 100 100"><use href="#avatar-p2"/></svg></div>
         <div class="info">
           <h2>Алиби Тулеугалиев</h2>
           <div class="role">Студент, спортсмен и организатор</div>
-          <div class="meta">
-            <div><strong>3</strong> курс</div>
-          </div>
+          <div class="meta"><div><strong>3</strong> курс</div></div>
         </div>
       </div>
 
@@ -290,19 +326,11 @@
 
     <div class="panel" id="p3">
       <div class="profile-head">
-        <div class="avatar-box">
-          <svg viewBox="0 0 100 100">
-            <rect width="100" height="100" fill="#000"/>
-            <rect x="20" y="20" width="30" height="30" fill="#fff"/>
-            <rect x="55" y="55" width="30" height="30" fill="#fff"/>
-          </svg>
-        </div>
+        <div class="avatar-box"><svg viewBox="0 0 100 100"><use href="#avatar-p3"/></svg></div>
         <div class="info">
           <h2>Оралов Нурболат</h2>
           <div class="role">Вычислительная техника и ПО</div>
-          <div class="meta">
-            <div><strong>3</strong> курс, AIU</div>
-          </div>
+          <div class="meta"><div><strong>3</strong> курс, AIU</div></div>
         </div>
       </div>
 
@@ -332,18 +360,11 @@
 
     <div class="panel" id="p4">
       <div class="profile-head">
-        <div class="avatar-box">
-          <svg viewBox="0 0 100 100">
-            <rect width="100" height="100" fill="#000"/>
-            <path d="M15 80 Q50 15 85 80 Z" fill="#fff"/>
-          </svg>
-        </div>
+        <div class="avatar-box"><svg viewBox="0 0 100 100"><use href="#avatar-p4"/></svg></div>
         <div class="info">
           <h2>Полатов Алихан</h2>
           <div class="role">Предприниматель</div>
-          <div class="meta">
-            <div><strong>19</strong> лет</div>
-          </div>
+          <div class="meta"><div><strong>19</strong> лет</div></div>
         </div>
       </div>
 
@@ -380,35 +401,7 @@
       </div>
     </div>
   </section>
-
-  <section class="page" id="page-task1">
-    <div class="masthead">
-      <h1>Практическое задание 1</h1>
-      <p>Работа с DOM-деревом на JavaScript</p>
-    </div>
-
-    <div class="section">
-      <h3>Условие задачи</h3>
-      <ul class="highlights">
-        <li>Найдите элемент по ID и измените его текст на «Привет, мир!».</li>
-        <li>Создайте новый элемент &lt;div&gt; с классом <mark>new-div</mark> и текстом «Я новый элемент», добавив его в конец &lt;body&gt;.</li>
-        <li>Удалите элемент с классом <mark>old-element</mark>.</li>
-        <li>Создайте абзац с текстом «Это изменяемый абзац.» и изменяйте его цвет и размер шрифта по клику.</li>
-      </ul>
-    </div>
-
-    <div class="section">
-      <h3>Результат выполнения</h3>
-      <div id="target-element" class="task1-target">Исходный текст элемента.</div>
-      <div class="old-element task1-old-element">Этот элемент будет удалён скриптом.</div>
-      <div id="task1-result"></div>
-      <button class="cta task1-create-button" data-action="create-task1-element">Создать новый элемент</button>
-    </div>
-  </section>
-
-  
 </div>
-
 <script src="js/fake-api.js"></script>
 <script src="js/script.js"></script>
 </body>
