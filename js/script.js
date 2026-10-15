@@ -1,463 +1,298 @@
 (() => {
-  const selectors = {
-    pages: '.page',
-    pageButtons: '#navbar > button[data-page]',
-    memberPanels: '.panel',
-    memberButtons: '#member-tabs button[data-target]',
-  };
+  const $ = (id) => document.getElementById(id);
+  const TODOS_PER_PAGE = 12;
+  const USER_ROUTE = /^#user\/(\d+)$/;
 
-  const elements = {};
-  let todoLoadVersion = 0;
-  let todoPage = 1;
-  let todoSearchTimer = 0;
-  let todoSort = 'newest';
-  let activeUserTodos = [];
-  const todosPerPage = 12;
-  let allTodos = [];
+  
+  function h(tag, props = {}, ...children) {
+    const { className, dataset, attrs, ...rest } = props;
+    const node = document.createElement(tag);
+    if (className) node.className = className;
+    Object.assign(node.dataset, dataset);
+    Object.entries(attrs || {}).forEach(([name, value]) => node.setAttribute(name, value));
+    Object.assign(node, rest);
+    node.append(...children.flat().filter((child) => child != null && child !== false));
+    return node;
+  }
+
+  const button = (text, className, dataset = {}, extra = {}) =>
+    h('button', { type: 'button', className, dataset, textContent: text, ...extra });
+
+  const retryButton = (action, userId, text = 'Повторить') =>
+    button(text, 'todo-open-button', { action, userId: String(userId) });
+
+  const avatarImage = (className, src) => h('img', { className, src, alt: '', loading: 'lazy' });
+
+  
+  const state = {
+    todos: [],
+    page: 1,
+    sort: 'newest',
+    loadVersion: 0,
+    searchTimer: 0,
+    activeDialogId: null,
+  };
   const userCache = new Map();
-  let userDialogRequestVersion = 0;
-  let userProfileRequestVersion = 0;
-  const pendingTodoIds = new Set();
-  let activeTodoDialogId = null;
+  const userViews = new WeakMap(); 
+  const pendingIds = new Set();
+  const el = {};
+
+  const sortOptions = [
+    ['newest', 'Сначала новые'],
+    ['oldest', 'Сначала старые'],
+    ['title-asc', 'Название: А—Я'],
+    ['title-desc', 'Название: Я—А'],
+  ];
 
   function initialize() {
-    elements.memberTabs = document.getElementById('member-tabs');
-    elements.task1Result = document.getElementById('task1-result');
-    elements.task2Target = document.getElementById('task2-target-element');
-    elements.task2Output = document.getElementById('class-list-output');
-    elements.tableRows = document.getElementById('table-rows');
-    elements.tableCols = document.getElementById('table-cols');
-    elements.tableContainer = document.getElementById('table-container');
-    elements.colorPicker = document.getElementById('cell-color-picker');
-    elements.colorStats = document.getElementById('color-stats-output');
-    elements.themeButton = document.getElementById('theme-toggle-btn');
-    elements.todoCount = document.getElementById('todo-count');
-    elements.todoSummary = document.getElementById('todo-summary');
-    elements.todoProgress = document.querySelector('.todo-progress');
-    elements.todoProgressFill = document.getElementById('todo-progress-fill');
-    elements.todoList = document.getElementById('todo-list');
-    elements.todoSearch = document.getElementById('todo-search');
-    elements.todoSearchClear = document.getElementById('todo-search-clear');
-    elements.todoFilter = document.getElementById('todo-filter');
-    elements.todoSortField = document.getElementById('todo-sort-field');
-    elements.todoPagination = document.getElementById('todo-pagination');
-    elements.todoCreateForm = document.getElementById('todo-create-form');
-    elements.todoRefresh = document.querySelector('[data-action="todos-refresh"]');
-    elements.todoNotice = document.getElementById('todo-notice');
-    elements.todoDetailDialog = document.getElementById('todo-detail-dialog');
-    elements.todoDetailDialogTitle = document.getElementById('todo-detail-dialog-title');
-    elements.todoDetailDialogContent = document.getElementById('todo-detail-dialog-content');
-    elements.todoUserDialog = document.getElementById('todo-user-dialog');
-    elements.todoUserDialogContent = document.getElementById('todo-user-dialog-content');
-    elements.userProfileContent = document.getElementById('user-profile-content');
-    elements.userProfileTitle = document.getElementById('user-profile-title');
+    [
+      'member-tabs', 'task1-result', 'task2-target-element', 'class-list-output', 'table-rows', 'table-cols',
+      'table-container', 'cell-color-picker', 'color-stats-output', 'theme-toggle-btn', 'todo-count', 'todo-summary',
+      'todo-progress-fill', 'todo-list', 'todo-search', 'todo-search-clear', 'todo-filter', 'todo-sort-field',
+      'todo-pagination', 'todo-create-form', 'todo-notice', 'todo-detail-dialog', 'todo-detail-dialog-title',
+      'todo-detail-dialog-content', 'todo-user-dialog', 'todo-user-dialog-content', 'user-profile-content',
+      'user-profile-title',
+    ].forEach((id) => { el[id] = $(id); });
+    el.todoProgress = document.querySelector('.todo-progress');
+    el.todoRefresh = document.querySelector('[data-action="todos-refresh"]');
+    el.createToggle = document.querySelector('[data-action="todo-create-toggle"]');
 
-    elements.todoSortField?.replaceWith(createTodoSortField('todo-sort'));
+    el['todo-sort-field']?.replaceWith(createSortField('todo-sort'));
 
-    initializeTheme();
-    initializeTask1();
-    initializeTask3();
+    initTheme();
+    initTask1();
+    initTask3();
     updateTask2ClassList();
     loadTodos();
 
     document.addEventListener('click', handleClick);
-    document.addEventListener('change', handleTodoChange);
+    document.addEventListener('change', handleChange);
     document.addEventListener('submit', handleTodoSubmit);
-    window.addEventListener('hashchange', handleUserRoute);
-    handleUserRoute();
-    elements.todoSearch?.addEventListener('input', () => {
-      window.clearTimeout(todoSearchTimer);
-      todoSearchTimer = window.setTimeout(() => {
-        todoPage = 1;
-        renderTodos();
-      }, 160);
+    window.addEventListener('hashchange', handleRoute);
+    handleRoute();
+
+    el['todo-search']?.addEventListener('input', () => {
+      clearTimeout(state.searchTimer);
+      state.searchTimer = setTimeout(() => goToFirstPage(), 160);
     });
-    elements.todoFilter?.addEventListener('change', () => {
-      todoPage = 1;
-      renderTodos();
-    });
+    el['todo-filter']?.addEventListener('change', goToFirstPage);
   }
 
-  function handleTodoChange(event) {
+  function goToFirstPage() {
+    state.page = 1;
+    renderTodos();
+  }
+
+  function resetFilters() {
+    el['todo-search'].value = '';
+    el['todo-filter'].value = 'all';
+  }
+
+  
+  function handleChange(event) {
     const sortSelect = event.target.closest('select[data-action="todo-sort"]');
     if (sortSelect) {
-      todoSort = sortSelect.value;
-      document.querySelectorAll('select[data-action="todo-sort"]').forEach((select) => {
-        select.value = todoSort;
-      });
-      todoPage = 1;
-      renderTodos();
+      state.sort = sortSelect.value;
+      document.querySelectorAll('select[data-action="todo-sort"]').forEach((select) => { select.value = state.sort; });
+      goToFirstPage();
       renderUserTaskCards();
       return;
     }
-
     const checkbox = event.target.closest('input[data-action="todo-toggle"]');
     if (checkbox) toggleTodo(checkbox.dataset.id, checkbox);
   }
 
+  const actions = {
+    'open-member': (c) => showMember(c.dataset.member || 'p1'),
+    'create-task1-element': () => createTask1Element(),
+    'toggle-task2-class': () => { el['task2-target-element']?.classList.toggle('active'); updateTask2ClassList(); },
+    'toggle-theme': () => setTheme(document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark'),
+    'generate-table': () => generateTable(),
+    'todos-refresh': () => loadTodos(),
+    'todo-create-toggle': () => toggleCreateTodoForm(),
+    'todo-open': (c) => openTodoDialog(c.dataset.id),
+    'todo-edit': (c) => renderTodoEditDialog(c.dataset.id),
+    'todo-edit-cancel': () => renderTodoDetails(state.activeDialogId),
+    'todo-detail-close': () => el['todo-detail-dialog']?.close(),
+    'todo-delete': (c) => deleteTodo(c.dataset.id, c),
+    'todo-page': (c) => { state.page += Number(c.dataset.direction); renderTodos(); },
+    'todo-search-clear': () => { el['todo-search'].value = ''; goToFirstPage(); el['todo-search'].focus(); },
+    'todo-clear-filters': () => { resetFilters(); goToFirstPage(); el['todo-search'].focus(); },
+    'todo-user': (c) => openTodoUserDialog(c.dataset.userId),
+    'todo-user-close': () => el['todo-user-dialog']?.close(),
+    'user-retry': (c) => renderUserView(c.closest('#todo-user-dialog-content, #user-profile-content'), c.dataset.userId, true),
+  };
+
   function handleClick(event) {
-    const routeLink = event.target.closest('a[href^="#user/"], a[href="#todos"]');
+    const { target } = event;
+    const routeLink = target.closest('a[href^="#user/"], a[href="#todos"]');
     if (routeLink) {
       event.preventDefault();
-      navigateToHash(routeLink.getAttribute('href'));
+      const hash = routeLink.getAttribute('href');
+      if (location.hash === hash) handleRoute();
+      else location.hash = hash;
       return;
     }
 
-    if (event.target === elements.todoUserDialog) {
-      elements.todoUserDialog.close();
+    if (target === el['todo-user-dialog'] || target === el['todo-detail-dialog']) {
+      target.close();
       return;
     }
 
-    if (event.target === elements.todoDetailDialog) {
-      elements.todoDetailDialog.close();
-      return;
-    }
-
-    const paragraph = event.target.closest('.editable-paragraph');
+    const paragraph = target.closest('.editable-paragraph');
     if (paragraph) {
       paragraph.classList.toggle('is-changed');
       return;
     }
 
-    const control = event.target.closest('[data-page], [data-member], [data-action]');
+    const control = target.closest('[data-page], [data-member], [data-action]');
     if (!control) return;
+    const { page, member, action } = control.dataset;
 
-    if (control.dataset.page) {
-      if (window.location.hash.startsWith('#user/')) {
-        window.history.replaceState(null, '', `${window.location.pathname}${window.location.search}`);
-      }
-      showPage(control.dataset.page);
-      if (control.dataset.page === 'resume' && !document.querySelector(`${selectors.memberPanels}.active`)) {
-        showMember('p1');
-      }
-      return;
-    }
-
-    if (control.dataset.member) {
-      showMember(control.dataset.member);
-      return;
-    }
-
-    switch (control.dataset.action) {
-      case 'open-member':
-        showMember(control.dataset.member || 'p1');
-        break;
-      case 'create-task1-element':
-        createTask1Element();
-        break;
-      case 'toggle-task2-class':
-        elements.task2Target?.classList.toggle('active');
-        updateTask2ClassList();
-        break;
-      case 'toggle-theme':
-        toggleTheme();
-        break;
-      case 'generate-table':
-        generateTable();
-        break;
-      case 'todos-refresh':
-        loadTodos();
-        break;
-      case 'todo-create-toggle':
-        toggleCreateTodoForm();
-        break;
-      case 'todo-open':
-        openTodoDialog(control.dataset.id);
-        break;
-      case 'todo-edit':
-        renderTodoEditDialog(control.dataset.id);
-        break;
-      case 'todo-edit-cancel':
-        renderTodoDetails(activeTodoDialogId);
-        break;
-      case 'todo-detail-close':
-        elements.todoDetailDialog?.close();
-        break;
-      case 'todo-delete':
-        deleteTodo(control.dataset.id, control);
-        break;
-      case 'todo-page':
-        todoPage += Number(control.dataset.direction);
-        renderTodos();
-        break;
-      case 'todo-search-clear':
-        elements.todoSearch.value = '';
-        todoPage = 1;
-        renderTodos();
-        elements.todoSearch.focus();
-        break;
-      case 'todo-clear-filters':
-        elements.todoSearch.value = '';
-        elements.todoFilter.value = 'all';
-        todoPage = 1;
-        renderTodos();
-        elements.todoSearch.focus();
-        break;
-      case 'todo-user':
-        openTodoUserDialog(control.dataset.userId);
-        break;
-      case 'todo-user-close':
-        elements.todoUserDialog?.close();
-        break;
-      case 'todo-user-retry':
-        openTodoUserDialog(control.dataset.userId, true);
-        break;
-      case 'user-profile-retry':
-        loadUserProfile(control.dataset.userId);
-        break;
-      case 'user-tasks-retry':
-        loadUserProfile(control.dataset.userId);
-        break;
+    if (page) {
+      if (location.hash.startsWith('#user/')) history.replaceState(null, '', location.pathname + location.search);
+      showPage(page);
+      if (page === 'resume' && !document.querySelector('.panel.active')) showMember('p1');
+    } else if (member) {
+      showMember(member);
+    } else {
+      actions[action]?.(control);
     }
   }
 
+  
   function showPage(pageId) {
-    const page = document.getElementById(`page-${pageId}`);
+    const page = $(`page-${pageId}`);
     if (!page) return;
-
-    document.querySelectorAll(selectors.pages).forEach((item) => {
-      item.classList.toggle('active', item === page);
+    document.querySelectorAll('.page').forEach((item) => item.classList.toggle('active', item === page));
+    document.querySelectorAll('#navbar > button[data-page]').forEach((btn) => {
+      const isActive = btn.dataset.page === pageId;
+      btn.classList.toggle('active', isActive);
+      btn.setAttribute('aria-current', isActive ? 'page' : 'false');
     });
-
-    document.querySelectorAll(selectors.pageButtons).forEach((button) => {
-      button.classList.toggle('active', button.dataset.page === pageId);
-      button.setAttribute('aria-current', button.dataset.page === pageId ? 'page' : 'false');
-    });
-
-    if (elements.memberTabs) {
-      elements.memberTabs.hidden = pageId !== 'resume';
-    }
+    if (el['member-tabs']) el['member-tabs'].hidden = pageId !== 'resume';
   }
 
-  function navigateToHash(hash) {
-    if (window.location.hash === hash) {
-      handleUserRoute();
-      return;
-    }
-    window.location.hash = hash;
+  function showMember(memberId) {
+    const panel = $(memberId);
+    if (!panel?.matches('.panel')) return;
+    showPage('resume');
+    document.querySelectorAll('.panel').forEach((item) => item.classList.toggle('active', item === panel));
+    document.querySelectorAll('#member-tabs button[data-target]').forEach((btn) => {
+      const isActive = btn.dataset.target === memberId;
+      btn.classList.toggle('active', isActive);
+      btn.setAttribute('aria-pressed', String(isActive));
+    });
   }
 
-  function handleUserRoute() {
-    const match = window.location.hash.match(/^#user\/(\d+)$/);
-    if (match) {
-      elements.todoDetailDialog?.close();
-      elements.todoUserDialog?.close();
-      showPage('user');
-      loadUserProfile(Number(match[1]));
-      return;
-    }
-
-    if (window.location.hash === '#todos') {
-      elements.todoDetailDialog?.close();
-      elements.todoUserDialog?.close();
-      showPage('todos');
-      return;
-    }
-
-    if (!window.location.hash && document.getElementById('page-user')?.classList.contains('active')) {
+  function handleRoute() {
+    const match = location.hash.match(USER_ROUTE);
+    const isTodos = location.hash === '#todos';
+    if (match || isTodos) {
+      el['todo-detail-dialog']?.close();
+      el['todo-user-dialog']?.close();
+      showPage(match ? 'user' : 'todos');
+      if (match) renderUserView(el['user-profile-content'], match[1]);
+    } else if (!location.hash && $('page-user')?.classList.contains('active')) {
       showPage('todos');
     }
   }
 
-  async function getUserData(userId) {
+  
+  const getUserName = (user) =>
+    [user.firstName, user.lastName].filter(Boolean).join(' ') || `Пользователь #${user.id}`;
+
+  function getUserData(userId) {
     const id = Number(userId);
-    if (!Number.isInteger(id) || id < 1) return null;
+    if (!Number.isInteger(id) || id < 1) return Promise.resolve(null);
     if (userCache.has(id)) return userCache.get(id);
 
-    const request = window.fakeTodoApi.getUserById(id)
-      .then((user) => {
-        if (user) userCache.set(id, user);
-        else userCache.delete(id);
+    const request = window.fakeTodoApi.getUserById(id).then(
+      (user) => {
+        if (!user) userCache.delete(id);
         return user;
-      })
-      .catch((error) => {
+      },
+      (error) => {
         userCache.delete(id);
         throw error;
-      });
+      },
+    );
     userCache.set(id, request);
     return request;
   }
 
-  async function openTodoUserDialog(userId, retry = false) {
-    const id = Number(userId);
-    if (!Number.isInteger(id) || id < 1 || !elements.todoUserDialog) return;
+  const isValidId = (id) => Number.isInteger(id) && id > 0;
 
-    const requestVersion = ++userDialogRequestVersion;
-    if (!elements.todoUserDialog.open) elements.todoUserDialog.showModal();
-    renderUserLoading(elements.todoUserDialogContent, 'Загружаем данные пользователя…');
+  function renderUserLoading(container, message) {
+    container.replaceChildren(h('p', { className: 'user-load-status', textContent: message, attrs: { role: 'status' } }));
+    container.setAttribute('aria-busy', 'true');
+  }
+
+  function renderUserError(container, message, userId) {
+    container.replaceChildren(
+      h('p', { className: 'user-load-error', textContent: `Не удалось загрузить данные: ${message}` }),
+      retryButton('user-retry', userId),
+    );
+    container.removeAttribute('aria-busy');
+  }
+
+  
+  async function renderUserView(container, userId, retry = false) {
+    const id = Number(userId);
+    if (!container || !isValidId(id)) return;
+
+    const isProfile = container === el['user-profile-content'];
+    const version = (userViews.get(container)?.version || 0) + 1;
+    const view = { version, todos: [] };
+    userViews.set(container, view);
+    container.dataset.userId = String(id);
+    const isStale = () => userViews.get(container) !== view || (!isProfile && !el['todo-user-dialog'].open);
+
+    if (isProfile) el['user-profile-title'].textContent = `Профиль пользователя #${id}`;
+    renderUserLoading(container, 'Загружаем данные пользователя…');
 
     try {
       if (retry) userCache.delete(id);
-      const user = await getUserData(id);
-      if (requestVersion !== userDialogRequestVersion || !elements.todoUserDialog.open) return;
-      if (!user) throw new Error(`Пользователь с ID ${id} не найден.`);
-      elements.todoUserDialogContent.replaceChildren(createUserDetails(user, true));
-      elements.todoUserDialogContent.removeAttribute('aria-busy');
-    } catch (error) {
-      if (requestVersion !== userDialogRequestVersion || !elements.todoUserDialog.open) return;
-      renderUserError(elements.todoUserDialogContent, error.message, 'todo-user-retry', id);
-    }
-  }
-
-  async function loadUserProfile(userId) {
-    const id = Number(userId);
-    if (!Number.isInteger(id) || id < 1 || !elements.userProfileContent) return;
-
-    const requestVersion = ++userProfileRequestVersion;
-    activeUserTodos = [];
-    elements.userProfileTitle.textContent = `Профиль пользователя #${id}`;
-    renderUserLoading(elements.userProfileContent, 'Загружаем профиль пользователя…');
-
-    try {
       const [userResult, todosResult] = await Promise.allSettled([
         getUserData(id),
         window.fakeTodoApi.getByUserId(id),
       ]);
-      if (requestVersion !== userProfileRequestVersion) return;
+      if (isStale()) return;
       if (userResult.status === 'rejected') throw userResult.reason;
       const user = userResult.value;
       if (!user) throw new Error(`Пользователь с ID ${id} не найден.`);
-      elements.userProfileTitle.textContent = getUserName(user);
-      activeUserTodos = todosResult.status === 'fulfilled' ? todosResult.value : [];
-      const userTasks = todosResult.status === 'fulfilled'
-        ? createUserTasksSection(activeUserTodos)
-        : createUserTasksError(id, todosResult.reason.message);
-      elements.userProfileContent.replaceChildren(createUserDetails(user, false), userTasks);
-      elements.userProfileContent.removeAttribute('aria-busy');
+
+      if (isProfile) el['user-profile-title'].textContent = getUserName(user);
+      const todosOk = todosResult.status === 'fulfilled';
+      view.todos = todosOk ? todosResult.value : [];
+      const details = createUserDetails(user, !isProfile);
+      const tasks = todosOk ? createUserTasksSection(view.todos) : createUserTasksError(id, todosResult.reason.message);
+
+      container.replaceChildren(...(isProfile ? [details, tasks] : [h('div', { className: 'user-modal' }, details, tasks)]));
+      container.removeAttribute('aria-busy');
     } catch (error) {
-      if (requestVersion !== userProfileRequestVersion) return;
-      renderUserError(elements.userProfileContent, error.message, 'user-profile-retry', id);
+      if (!isStale()) renderUserError(container, error.message, id);
     }
   }
 
-  async function refreshActiveUserProfile() {
-    const match = window.location.hash.match(/^#user\/(\d+)$/);
-    if (match) await loadUserProfile(Number(match[1]));
+  function openTodoUserDialog(userId) {
+    const dialog = el['todo-user-dialog'];
+    if (!dialog || !isValidId(Number(userId))) return;
+    if (!dialog.open) dialog.showModal();
+    return renderUserView(el['todo-user-dialog-content'], userId);
   }
 
-  function createTodoSortField(id) {
-    const field = document.createElement('div');
-    field.className = 'todo-filter-field';
-    const label = document.createElement('label');
-    const select = document.createElement('select');
-    select.id = id;
-    select.dataset.action = 'todo-sort';
-    label.htmlFor = id;
-    label.textContent = '\u0421\u043e\u0440\u0442\u0438\u0440\u043e\u0432\u0430\u0442\u044c';
-    [
-      ['newest', '\u0421\u043d\u0430\u0447\u0430\u043b\u0430 \u043d\u043e\u0432\u044b\u0435'],
-      ['oldest', '\u0421\u043d\u0430\u0447\u0430\u043b\u0430 \u0441\u0442\u0430\u0440\u044b\u0435'],
-      ['title-asc', '\u041d\u0430\u0437\u0432\u0430\u043d\u0438\u0435: \u0410\u2014\u042f'],
-      ['title-desc', '\u041d\u0430\u0437\u0432\u0430\u043d\u0438\u0435: \u042f\u2014\u0410'],
-    ].forEach(([value, text]) => {
-      const option = document.createElement('option');
-      option.value = value;
-      option.textContent = text;
-      select.append(option);
-    });
-    select.value = todoSort;
-    field.append(label, select);
-    return field;
+  
+  function refreshUserViews() {
+    const route = location.hash.match(USER_ROUTE);
+    const dialogContent = el['todo-user-dialog-content'];
+    return Promise.all([
+      route && renderUserView(el['user-profile-content'], route[1]),
+      el['todo-user-dialog']?.open && renderUserView(dialogContent, dialogContent.dataset.userId),
+    ]);
   }
 
-  function sortTodos(todos, order = todoSort) {
-    return [...todos].sort((left, right) => {
-      const idOrder = Number(right.id) - Number(left.id);
-      if (order === 'oldest') return -idOrder;
-      if (order === 'title-asc' || order === 'title-desc') {
-        const titleOrder = String(left.todo).localeCompare(String(right.todo), 'ru', { sensitivity: 'base' });
-        return (order === 'title-desc' ? -titleOrder : titleOrder) || idOrder;
-      }
-      return idOrder;
-    });
-  }
-
-  function renderUserTaskCards() {
-    const list = elements.userProfileContent?.querySelector('.user-tasks-section .todo-list');
-    if (!list) return;
-    renderTodoCards(list, activeUserTodos);
-  }
-
-  function renderTodoCards(list, todos) {
-    list.replaceChildren(...sortTodos(todos).map(createTodoCard));
-  }
-
-  function createUserTasksSection(todos) {
-    const section = document.createElement('section');
-    section.className = 'user-tasks-section';
-    const completedCount = todos.filter((todo) => todo.completed).length;
-    const heading = document.createElement('div');
-    heading.className = 'user-tasks-heading';
-    const headingContent = document.createElement('div');
-    headingContent.className = 'user-tasks-heading-copy';
-    const title = document.createElement('h2');
-    title.textContent = 'Задачи пользователя';
-    const summary = document.createElement('p');
-    summary.textContent = `Всего: ${todos.length} · В работе: ${todos.length - completedCount} · Выполнено: ${completedCount}`;
-    headingContent.append(title, summary);
-    heading.append(headingContent, createTodoSortField('user-task-sort'));
-    section.append(heading);
-
-    if (todos.length === 0) {
-      const empty = document.createElement('p');
-      empty.className = 'user-tasks-empty';
-      empty.textContent = 'У этого пользователя пока нет задач.';
-      section.append(empty);
-      return section;
-    }
-
-    const list = document.createElement('div');
-    list.className = 'todo-list';
-    renderTodoCards(list, todos);
-    section.append(list);
-    return section;
-  }
-
-  function createUserTasksError(userId, message) {
-    const section = document.createElement('section');
-    section.className = 'user-tasks-section user-tasks-error';
-    const title = document.createElement('h2');
-    title.textContent = 'Не удалось загрузить задачи';
-    const description = document.createElement('p');
-    description.textContent = message || 'Проверьте подключение и попробуйте ещё раз.';
-    const retry = document.createElement('button');
-    retry.type = 'button';
-    retry.className = 'todo-open-button';
-    retry.dataset.action = 'user-tasks-retry';
-    retry.dataset.userId = String(userId);
-    retry.textContent = 'Повторить загрузку';
-    section.append(title, description, retry);
-    return section;
-  }
-
-  function getUserName(user) {
-    return [user.firstName, user.lastName].filter(Boolean).join(' ') || `Пользователь #${user.id}`;
-  }
-
-  function createUserDetails(user, includeProfileLink) {
-    const wrapper = document.createElement('div');
-    wrapper.className = `user-details${includeProfileLink ? ' user-details--compact' : ''}`;
-
-    const identity = document.createElement('div');
-    identity.className = 'user-details-identity';
-    if (user.image) {
-      const avatar = document.createElement('img');
-      avatar.className = 'user-details-avatar';
-      avatar.src = user.image;
-      avatar.alt = '';
-      avatar.loading = 'lazy';
-      identity.append(avatar);
-    }
-    const identityText = document.createElement('div');
-    const name = document.createElement(includeProfileLink ? 'h3' : 'h2');
-    name.textContent = getUserName(user);
-    const username = document.createElement('p');
-    username.className = 'user-details-username';
-    username.textContent = user.username ? `@${user.username}` : `ID: ${user.id}`;
-    identityText.append(name, username);
-    identity.append(identityText);
-    wrapper.append(identity);
-
+  function createUserDetails(user, compact) {
     const address = [user.address?.address, user.address?.city, user.address?.state].filter(Boolean).join(', ');
     const company = [user.company?.name, user.company?.title].filter(Boolean).join(' · ');
     const rows = [
@@ -469,461 +304,363 @@
       ['Компания', company],
       ['Университет', user.university],
     ].filter(([, value]) => value);
-    const details = document.createElement('dl');
-    details.className = 'user-details-list';
-    rows.forEach(([label, value]) => {
-      const row = document.createElement('div');
-      const term = document.createElement('dt');
-      term.textContent = label;
-      const description = document.createElement('dd');
-      description.textContent = value;
-      row.append(term, description);
-      details.append(row);
-    });
-    wrapper.append(details);
 
-    if (includeProfileLink) {
-      const profileLink = document.createElement('a');
-      profileLink.className = 'cta-btn user-profile-link';
-      profileLink.href = `#user/${user.id}`;
-      profileLink.textContent = 'Открыть страницу пользователя';
-      wrapper.append(profileLink);
+    return h('div', { className: `user-details${compact ? ' user-details--compact' : ''}` },
+      h('div', { className: 'user-details-identity' },
+        user.image && avatarImage('user-details-avatar', user.image),
+        h('div', {},
+          h(compact ? 'h3' : 'h2', { textContent: getUserName(user) }),
+          h('p', { className: 'user-details-username', textContent: user.username ? `@${user.username}` : `ID: ${user.id}` }),
+        ),
+      ),
+      h('dl', { className: 'user-details-list' },
+        rows.map(([label, value]) => h('div', {}, h('dt', { textContent: label }), h('dd', { textContent: value }))),
+      ),
+      compact && h('a', {
+        className: 'cta-btn user-profile-link',
+        href: `#user/${user.id}`,
+        textContent: 'Открыть страницу пользователя',
+      }),
+    );
+  }
+
+  function createUserTasksSection(todos) {
+    const done = todos.filter((todo) => todo.completed).length;
+    const section = h('section', { className: 'user-tasks-section' },
+      h('div', { className: 'user-tasks-heading' },
+        h('div', { className: 'user-tasks-heading-copy' },
+          h('h2', { textContent: 'Задачи пользователя' }),
+          h('p', { textContent: `Всего: ${todos.length} · В работе: ${todos.length - done} · Выполнено: ${done}` }),
+        ),
+        createSortField('user-task-sort'),
+      ),
+    );
+
+    if (todos.length === 0) {
+      section.append(h('p', { className: 'user-tasks-empty', textContent: 'У этого пользователя пока нет задач.' }));
+    } else {
+      const list = h('div', { className: 'todo-list' });
+      renderTodoCards(list, todos);
+      section.append(list);
     }
-    return wrapper;
+    return section;
   }
 
-  function renderUserLoading(container, message) {
-    if (!container) return;
-    const status = document.createElement('p');
-    status.className = 'user-load-status';
-    status.setAttribute('role', 'status');
-    status.textContent = message;
-    container.replaceChildren(status);
-    container.setAttribute('aria-busy', 'true');
+  const createUserTasksError = (userId, message) =>
+    h('section', { className: 'user-tasks-section user-tasks-error' },
+      h('h2', { textContent: 'Не удалось загрузить задачи' }),
+      h('p', { textContent: message || 'Проверьте подключение и попробуйте ещё раз.' }),
+      retryButton('user-retry', userId, 'Повторить загрузку'),
+    );
+
+  
+  function createSortField(id) {
+    const select = h('select', { id, dataset: { action: 'todo-sort' } },
+      sortOptions.map(([value, text]) => h('option', { value, textContent: text })));
+    select.value = state.sort;
+    return h('div', { className: 'todo-filter-field' }, h('label', { htmlFor: id, textContent: 'Сортировать' }), select);
   }
 
-  function renderUserError(container, message, action, userId) {
-    if (!container) return;
-    const error = document.createElement('p');
-    error.className = 'user-load-error';
-    error.textContent = `Не удалось загрузить данные: ${message}`;
-    const retry = document.createElement('button');
-    retry.type = 'button';
-    retry.className = 'todo-open-button';
-    retry.dataset.action = action;
-    retry.dataset.userId = String(userId);
-    retry.textContent = 'Повторить';
-    container.replaceChildren(error, retry);
-    container.removeAttribute('aria-busy');
+  function sortTodos(todos, order = state.sort) {
+    return [...todos].sort((left, right) => {
+      const idOrder = Number(right.id) - Number(left.id);
+      if (order === 'oldest') return -idOrder;
+      if (order === 'title-asc' || order === 'title-desc') {
+        const titleOrder = String(left.todo).localeCompare(String(right.todo), 'ru', { sensitivity: 'base' });
+        return (order === 'title-desc' ? -titleOrder : titleOrder) || idOrder;
+      }
+      return idOrder;
+    });
   }
 
-  function showMember(memberId) {
-    const panel = document.getElementById(memberId);
-    if (!panel || !panel.matches(selectors.memberPanels)) return;
+  const renderTodoCards = (list, todos) => list.replaceChildren(...sortTodos(todos).map((todo) => createTodoCard(todo)));
 
-    showPage('resume');
+  function renderUserTaskCards() {
+    [el['user-profile-content'], el['todo-user-dialog-content']].forEach((container) => {
+      const list = container?.querySelector('.user-tasks-section .todo-list');
+      if (list) renderTodoCards(list, userViews.get(container)?.todos || []);
+    });
+  }
 
-    document.querySelectorAll(selectors.memberPanels).forEach((item) => {
-      item.classList.toggle('active', item === panel);
+  function createTodoCard(todo) {
+    const id = String(todo.id);
+    const pending = pendingIds.has(id);
+    const checkbox = h('input', {
+      type: 'checkbox',
+      dataset: { action: 'todo-toggle', id },
+      checked: todo.completed,
+      disabled: pending,
+      attrs: { 'aria-label': todo.completed ? 'Снять отметку выполнения задачи' : 'Отметить задачу выполненной' },
     });
 
-    document.querySelectorAll(selectors.memberButtons).forEach((button) => {
-      const isActive = button.dataset.target === memberId;
-      button.classList.toggle('active', isActive);
-      button.setAttribute('aria-pressed', String(isActive));
-    });
+    return h('article', { className: `todo-card task-card${todo.completed ? ' is-completed' : ''}`, dataset: { todoId: id } },
+      h('div', { className: 'task-card-heading-row' },
+        createTodoAssignee(todo),
+        h('h2', { className: 'todo-card-title task-card-title', textContent: todo.todo }),
+        h('label', {
+          className: `todo-checkbox-status${todo.completed ? ' is-complete' : ''}`,
+          title: todo.completed ? 'Снять отметку выполнения' : 'Отметить выполнение',
+        }, checkbox),
+      ),
+      h('p', { className: 'todo-meta', textContent: `Задача #${todo.id}` }),
+      h('div', { className: 'todo-actions' },
+        button('Подробнее', 'todo-open-button', { action: 'todo-open', id }, { disabled: pending }),
+        button('×', 'todo-open-button todo-delete-button', { action: 'todo-delete', id }, {
+          disabled: pending,
+          title: 'Удалить задачу',
+          attrs: { 'aria-label': 'Удалить задачу' },
+        }),
+      ),
+    );
+  }
+
+  function createTodoAssignee(todo) {
+    const assignee = button('', 'todo-assignee', { action: 'todo-user', userId: String(todo.userId) });
+    renderTodoAssignee(assignee, null, todo.userId);
+    getUserData(todo.userId)
+      .catch(() => null)
+      .then((user) => {
+        if (assignee.isConnected) renderTodoAssignee(assignee, user, todo.userId);
+      });
+    return assignee;
+  }
+
+  function renderTodoAssignee(node, user, userId) {
+    const name = user ? getUserName(user) : `Пользователь #${userId}`;
+    const initials = name.split(/\s+/).filter(Boolean).slice(0, 2).map((part) => part[0]).join('').toLocaleUpperCase();
+    node.replaceChildren(
+      user?.image
+        ? avatarImage('todo-assignee-avatar', user.image)
+        : h('span', { className: 'todo-assignee-avatar', textContent: initials }),
+      h('span', { className: 'todo-assignee-name', textContent: name }),
+    );
+    node.setAttribute('aria-label', `Открыть профиль: ${name}`);
+    node.title = name;
+  }
+
+  function createTodoEmptyState(hasTasks) {
+    const [icon, title, text, label, action] = hasTasks
+      ? ['⌕', 'Ничего не найдено', 'Попробуйте изменить запрос или сбросить фильтры.', 'Сбросить фильтры', 'todo-clear-filters']
+      : ['✓', 'Пока нет задач', 'Добавьте первое дело, чтобы начать планировать.', 'Создать задачу', 'todo-create-toggle'];
+    return h('div', { className: 'todo-empty-state' },
+      h('span', { className: 'todo-empty-icon', textContent: icon, attrs: { 'aria-hidden': 'true' } }),
+      h('h2', { textContent: title }),
+      h('p', { textContent: text }),
+      button(label, 'todo-open-button', { action }),
+    );
+  }
+
+  function createLoadError() {
+    return h('div', { className: 'todo-empty-state todo-load-error' },
+      h('span', { className: 'todo-empty-icon', textContent: '!', attrs: { 'aria-hidden': 'true' } }),
+      h('h2', { textContent: 'Не удалось загрузить задачи' }),
+      h('p', { textContent: 'Проверьте подключение к интернету и попробуйте ещё раз.' }),
+      button('Повторить загрузку', 'todo-open-button', { action: 'todos-refresh' }),
+    );
+  }
+
+  
+  function setLoading(isLoading) {
+    const setBusy = (node) => (isLoading ? node.setAttribute('aria-busy', 'true') : node.removeAttribute('aria-busy'));
+    setBusy(el['todo-list']);
+    if (!el.todoRefresh) return;
+    el.todoRefresh.disabled = isLoading;
+    setBusy(el.todoRefresh);
   }
 
   async function loadTodos() {
-    if (!elements.todoList || !window.fakeTodoApi) return false;
+    if (!el['todo-list'] || !window.fakeTodoApi) return false;
 
-    const requestVersion = ++todoLoadVersion;
-    elements.todoList.setAttribute('aria-busy', 'true');
-    if (elements.todoRefresh) {
-      elements.todoRefresh.disabled = true;
-      elements.todoRefresh.setAttribute('aria-busy', 'true');
-    }
-    if (allTodos.length === 0) {
-      elements.todoCount.textContent = 'Загружаем задачи…';
-      elements.todoList.replaceChildren(...Array.from({ length: 6 }, () => {
-        const skeleton = document.createElement('div');
-        skeleton.className = 'todo-skeleton';
-        skeleton.setAttribute('aria-hidden', 'true');
-        return skeleton;
-      }));
+    const version = ++state.loadVersion;
+    setLoading(true);
+    if (state.todos.length === 0) {
+      el['todo-count'].textContent = 'Загружаем задачи…';
+      el['todo-list'].replaceChildren(...Array.from({ length: 6 }, () =>
+        h('div', { className: 'todo-skeleton', attrs: { 'aria-hidden': 'true' } })));
     }
 
     try {
       const todos = await window.fakeTodoApi.getAll();
-      if (requestVersion !== todoLoadVersion) return false;
-      allTodos = todos;
+      if (version !== state.loadVersion) return false;
+      state.todos = todos;
       setTodoNotice('');
       renderTodos();
       return true;
     } catch (error) {
-      if (requestVersion !== todoLoadVersion) return false;
-      elements.todoCount.textContent = 'Не удалось обновить список';
-      elements.todoSummary.textContent = 'Проверьте подключение и попробуйте ещё раз';
-      elements.todoProgress.hidden = true;
-      if (allTodos.length === 0) {
-        const failure = document.createElement('div');
-        failure.className = 'todo-empty-state todo-load-error';
-        const icon = document.createElement('span');
-        icon.className = 'todo-empty-icon';
-        icon.setAttribute('aria-hidden', 'true');
-        icon.textContent = '!';
-        const title = document.createElement('h2');
-        title.textContent = 'Не удалось загрузить задачи';
-        const description = document.createElement('p');
-        description.textContent = 'Проверьте подключение к интернету и попробуйте ещё раз.';
-        const retry = document.createElement('button');
-        retry.type = 'button';
-        retry.className = 'todo-open-button';
-        retry.dataset.action = 'todos-refresh';
-        retry.textContent = 'Повторить загрузку';
-        failure.append(icon, title, description, retry);
-        elements.todoList.replaceChildren(failure);
-      }
+      if (version !== state.loadVersion) return false;
+      el['todo-count'].textContent = 'Не удалось обновить список';
+      el['todo-summary'].textContent = 'Проверьте подключение и попробуйте ещё раз';
+      el.todoProgress.hidden = true;
+      if (state.todos.length === 0) el['todo-list'].replaceChildren(createLoadError());
       setTodoNotice(error.message, 'error');
       return false;
     } finally {
-      if (requestVersion === todoLoadVersion) {
-        elements.todoList.removeAttribute('aria-busy');
-        if (elements.todoRefresh) {
-          elements.todoRefresh.disabled = false;
-          elements.todoRefresh.removeAttribute('aria-busy');
-        }
-      }
+      if (version === state.loadVersion) setLoading(false);
     }
   }
 
   function renderTodos() {
-    if (!elements.todoList) return;
+    if (!el['todo-list']) return;
 
-    const search = elements.todoSearch.value.trim().toLocaleLowerCase();
-    const filter = elements.todoFilter.value;
-    const completedCount = allTodos.filter((todo) => todo.completed).length;
-    const activeCount = allTodos.length - completedCount;
-    const completion = allTodos.length ? Math.round(completedCount / allTodos.length * 100) : 0;
-    elements.todoSummary.textContent = `${activeCount} в работе · ${completedCount} выполнено`;
-    elements.todoProgress.setAttribute('aria-valuenow', String(completion));
-    elements.todoProgress.setAttribute('aria-valuetext', `${completion}% выполнено`);
-    elements.todoProgressFill.style.width = `${completion}%`;
-    elements.todoProgress.hidden = allTodos.length === 0;
-    elements.todoSearchClear.hidden = !search;
-    const filteredTodos = sortTodos(allTodos.filter((todo) => {
-      const searchableText = `${todo.todo} ${todo.userId} ${todo.id}`.toLocaleLowerCase();
-      const matchesSearch = searchableText.includes(search);
+    const { todos } = state;
+    const search = el['todo-search'].value.trim().toLocaleLowerCase();
+    const filter = el['todo-filter'].value;
+    const completed = todos.filter((todo) => todo.completed).length;
+    const completion = todos.length ? Math.round((completed / todos.length) * 100) : 0;
+
+    el['todo-summary'].textContent = `${todos.length - completed} в работе · ${completed} выполнено`;
+    el.todoProgress.setAttribute('aria-valuenow', String(completion));
+    el.todoProgress.setAttribute('aria-valuetext', `${completion}% выполнено`);
+    el['todo-progress-fill'].style.width = `${completion}%`;
+    el.todoProgress.hidden = todos.length === 0;
+    el['todo-search-clear'].hidden = !search;
+
+    const filtered = sortTodos(todos.filter((todo) => {
+      const text = `${todo.todo} ${todo.userId} ${todo.id}`.toLocaleLowerCase();
       const matchesFilter = filter === 'all' || (filter === 'active' ? !todo.completed : todo.completed);
-      return matchesSearch && matchesFilter;
+      return text.includes(search) && matchesFilter;
     }));
-    const pageCount = Math.max(1, Math.ceil(filteredTodos.length / todosPerPage));
-    todoPage = Math.min(Math.max(todoPage, 1), pageCount);
-    const firstIndex = (todoPage - 1) * todosPerPage;
-    const visibleTodos = filteredTodos.slice(firstIndex, firstIndex + todosPerPage);
+    const pageCount = Math.max(1, Math.ceil(filtered.length / TODOS_PER_PAGE));
+    state.page = Math.min(Math.max(state.page, 1), pageCount);
+    const start = (state.page - 1) * TODOS_PER_PAGE;
 
-    elements.todoCount.textContent = search || filter !== 'all'
-      ? `${filteredTodos.length} из ${allTodos.length} задач`
-      : `Всего задач: ${allTodos.length}`;
+    el['todo-count'].textContent = search || filter !== 'all'
+      ? `${filtered.length} из ${todos.length} задач`
+      : `Всего задач: ${todos.length}`;
 
-    if (filteredTodos.length === 0) {
-      elements.todoList.replaceChildren(createTodoEmptyState(allTodos.length > 0));
-    } else {
-      renderTodoCards(elements.todoList, visibleTodos);
-    }
+    if (filtered.length === 0) el['todo-list'].replaceChildren(createTodoEmptyState(todos.length > 0));
+    else renderTodoCards(el['todo-list'], filtered.slice(start, start + TODOS_PER_PAGE));
 
-    const pageLabel = elements.todoPagination.querySelector('[data-page-label]');
-    const previousButton = elements.todoPagination.querySelector('[data-direction="-1"]');
-    const nextButton = elements.todoPagination.querySelector('[data-direction="1"]');
-    pageLabel.textContent = `Страница ${todoPage} из ${pageCount}`;
-    previousButton.disabled = todoPage <= 1;
-    nextButton.disabled = todoPage >= pageCount;
-    elements.todoPagination.hidden = filteredTodos.length <= todosPerPage;
+    const pagination = el['todo-pagination'];
+    pagination.querySelector('[data-page-label]').textContent = `Страница ${state.page} из ${pageCount}`;
+    pagination.querySelector('[data-direction="-1"]').disabled = state.page <= 1;
+    pagination.querySelector('[data-direction="1"]').disabled = state.page >= pageCount;
+    pagination.hidden = filtered.length <= TODOS_PER_PAGE;
   }
 
-  function createTodoEmptyState(hasTasks) {
-    const empty = document.createElement('div');
-    empty.className = 'todo-empty-state';
-    const icon = document.createElement('span');
-    icon.className = 'todo-empty-icon';
-    icon.setAttribute('aria-hidden', 'true');
-    icon.textContent = hasTasks ? '⌕' : '✓';
-    const title = document.createElement('h2');
-    title.textContent = hasTasks ? 'Ничего не найдено' : 'Пока нет задач';
-    const description = document.createElement('p');
-    description.textContent = hasTasks
-      ? 'Попробуйте изменить запрос или сбросить фильтры.'
-      : 'Добавьте первое дело, чтобы начать планировать.';
-    const action = document.createElement('button');
-    action.type = 'button';
-    action.className = 'todo-open-button';
-    if (hasTasks) {
-      action.dataset.action = 'todo-clear-filters';
-      action.textContent = 'Сбросить фильтры';
-    } else {
-      action.dataset.action = 'todo-create-toggle';
-      action.textContent = 'Создать задачу';
-    }
-    empty.append(icon, title, description, action);
-    return empty;
+  function setTodoNotice(message, type = '') {
+    if (!el['todo-notice']) return;
+    el['todo-notice'].textContent = message;
+    el['todo-notice'].className = `todo-notice${type ? ` is-${type}` : ''}`;
   }
 
-  function createTodoCard(todo) {
-    const card = document.createElement('article');
-    const todoId = String(todo.id);
-    const isPending = pendingTodoIds.has(todoId);
-    card.className = `todo-card task-card${todo.completed ? ' is-completed' : ''}`;
-    card.dataset.todoId = todoId;
+  
+  const findTodo = (id) => state.todos.find((item) => item.id === Number(id));
+  const replaceTodo = (updated) => {
+    state.todos = state.todos.map((item) => (item.id === updated.id ? updated : item));
+  };
 
-    const heading = document.createElement('h2');
-    heading.className = 'todo-card-title task-card-title';
-    heading.textContent = todo.todo;
-    const header = document.createElement('div');
-    header.className = 'task-card-heading-row';
-    const meta = document.createElement('p');
-    meta.className = 'todo-meta';
-    meta.textContent = `Задача #${todo.id}`;
-    const status = document.createElement('label');
-    status.className = `todo-checkbox-status${todo.completed ? ' is-complete' : ''}`;
-    const statusCheckbox = document.createElement('input');
-    statusCheckbox.type = 'checkbox';
-    statusCheckbox.dataset.action = 'todo-toggle';
-    statusCheckbox.dataset.id = todoId;
-    statusCheckbox.checked = todo.completed;
-    statusCheckbox.disabled = isPending;
-    statusCheckbox.setAttribute('aria-label', todo.completed ? 'Снять отметку выполнения задачи' : 'Отметить задачу выполненной');
-    status.title = todo.completed
-      ? '\u0421\u043d\u044f\u0442\u044c \u043e\u0442\u043c\u0435\u0442\u043a\u0443 \u0432\u044b\u043f\u043e\u043b\u043d\u0435\u043d\u0438\u044f'
-      : '\u041e\u0442\u043c\u0435\u0442\u0438\u0442\u044c \u0432\u044b\u043f\u043e\u043b\u043d\u0435\u043d\u0438\u0435';
-    status.append(statusCheckbox);
-    header.append(heading, status);
-
-    const assignee = createTodoAssignee(todo);
-    const info = document.createElement('div');
-    info.className = 'todo-card-info';
-    info.append(meta, assignee);
-    const actions = document.createElement('div');
-    actions.className = 'todo-actions';
-    const openButton = document.createElement('button');
-    openButton.type = 'button';
-    openButton.className = 'todo-open-button';
-    openButton.dataset.action = 'todo-open';
-    openButton.dataset.id = todoId;
-    openButton.disabled = isPending;
-    openButton.textContent = 'Подробнее';
-    const deleteButton = document.createElement('button');
-    deleteButton.type = 'button';
-    deleteButton.className = 'todo-open-button todo-delete-button';
-    deleteButton.dataset.action = 'todo-delete';
-    deleteButton.dataset.id = todoId;
-    deleteButton.disabled = isPending;
-    deleteButton.textContent = '\u00d7';
-    deleteButton.setAttribute('aria-label', '\u0423\u0434\u0430\u043b\u0438\u0442\u044c \u0437\u0430\u0434\u0430\u0447\u0443');
-    deleteButton.title = '\u0423\u0434\u0430\u043b\u0438\u0442\u044c \u0437\u0430\u0434\u0430\u0447\u0443';
-    actions.append(openButton, deleteButton);
-    card.append(header, info, actions);
-    return card;
-  }
-
-  function createTodoAssignee(todo) {
-    const button = document.createElement('button');
-    button.type = 'button';
-    button.className = 'todo-assignee';
-    button.dataset.action = 'todo-user';
-    button.dataset.userId = String(todo.userId);
-    renderTodoAssignee(button, null, todo.userId);
-
-    getUserData(todo.userId)
-      .then((user) => {
-        if (button.isConnected) renderTodoAssignee(button, user, todo.userId);
-      })
-      .catch(() => {
-        if (button.isConnected) renderTodoAssignee(button, null, todo.userId);
-      });
-
-    return button;
-  }
-
-  function renderTodoAssignee(button, user, userId) {
-    const name = user ? getUserName(user) : `Пользователь #${userId}`;
-    const avatar = user?.image
-      ? document.createElement('img')
-      : document.createElement('span');
-    avatar.className = 'todo-assignee-avatar';
-    if (avatar instanceof HTMLImageElement) {
-      avatar.src = user.image;
-      avatar.alt = '';
-      avatar.loading = 'lazy';
-    } else {
-      avatar.textContent = name.split(/\s+/).filter(Boolean).slice(0, 2).map((part) => part[0]).join('').toLocaleUpperCase();
-    }
-    const label = document.createElement('span');
-    label.className = 'todo-assignee-name';
-    label.textContent = name;
-    button.replaceChildren(avatar, label);
-    button.setAttribute('aria-label', `Открыть профиль: ${name}`);
-    button.title = name;
+  function showDialogContent(title, content) {
+    el['todo-detail-dialog-title'].textContent = title;
+    el['todo-detail-dialog-content'].replaceChildren(content);
   }
 
   function openTodoDialog(id) {
-    const todo = allTodos.find((item) => item.id === Number(id));
-    if (!todo || !elements.todoDetailDialog) return;
-    activeTodoDialogId = String(todo.id);
+    const todo = findTodo(id);
+    if (!todo || !el['todo-detail-dialog']) return;
+    state.activeDialogId = String(todo.id);
     renderTodoDetails(todo.id);
-    if (!elements.todoDetailDialog.open) elements.todoDetailDialog.showModal();
+    if (!el['todo-detail-dialog'].open) el['todo-detail-dialog'].showModal();
   }
 
   function renderTodoDetails(id) {
-    const todoId = Number(id);
-    const todo = allTodos.find((item) => item.id === todoId);
-    if (!todo || !elements.todoDetailDialogContent) return;
+    const todo = findTodo(id);
+    if (!todo || !el['todo-detail-dialog-content']) return;
 
-    elements.todoDetailDialogTitle.textContent = 'Детали задачи';
-    const details = document.createElement('div');
-    details.className = 'todo-detail-content';
-    const title = document.createElement('h3');
-    title.className = 'todo-detail-title';
-    title.textContent = todo.todo;
-    const meta = document.createElement('p');
-    meta.className = 'todo-meta';
-    meta.textContent = `Задача #${todo.id}`;
-    const status = document.createElement('p');
-    status.className = `todo-detail-status${todo.completed ? ' is-completed' : ''}`;
-    status.textContent = todo.completed ? 'Выполнена' : 'В работе';
-    const assignee = createTodoAssignee(todo);
-    const actions = document.createElement('div');
-    actions.className = 'todo-detail-actions';
-    const editButton = document.createElement('button');
-    editButton.type = 'button';
-    editButton.className = 'cta-btn';
-    editButton.dataset.action = 'todo-edit';
-    editButton.dataset.id = String(todo.id);
-    editButton.textContent = 'Изменить';
-    actions.append(editButton);
-    details.append(title, meta, status, assignee, actions);
-    elements.todoDetailDialogContent.replaceChildren(details);
+    showDialogContent('Детали задачи', h('div', { className: 'todo-detail-content' },
+      h('h3', { className: 'todo-detail-title', textContent: todo.todo }),
+      h('p', { className: 'todo-meta', textContent: `Задача #${todo.id}` }),
+      h('p', {
+        className: `todo-detail-status${todo.completed ? ' is-completed' : ''}`,
+        textContent: todo.completed ? 'Выполнена' : 'В работе',
+      }),
+      createTodoAssignee(todo),
+      h('div', { className: 'todo-detail-actions' },
+        button('Изменить', 'cta-btn', { action: 'todo-edit', id: String(todo.id) })),
+    ));
   }
 
   function renderTodoEditDialog(id) {
-    const todoId = Number(id);
-    const todo = allTodos.find((item) => item.id === todoId);
-    if (!todo || !elements.todoDetailDialogContent) return;
-    activeTodoDialogId = String(todoId);
-    elements.todoDetailDialogTitle.textContent = 'Изменить задачу';
-    elements.todoDetailDialogContent.replaceChildren(createTodoEditForm(todo));
-    elements.todoDetailDialogContent.querySelector('[name="todo"]')?.focus();
-  }
-
-  function toggleCreateTodoForm() {
-    const form = elements.todoCreateForm;
-    const button = document.querySelector('[data-action="todo-create-toggle"]');
-    if (!form || !button) return;
-    form.hidden = !form.hidden;
-    button.setAttribute('aria-expanded', String(!form.hidden));
-    button.textContent = form.hidden ? 'Добавить задачу' : 'Скрыть форму';
-    if (!form.hidden) form.querySelector('[name="todo"]')?.focus();
+    const todo = findTodo(id);
+    if (!todo || !el['todo-detail-dialog-content']) return;
+    state.activeDialogId = String(todo.id);
+    showDialogContent('Изменить задачу', createTodoEditForm(todo));
+    el['todo-detail-dialog-content'].querySelector('[name="todo"]')?.focus();
   }
 
   function createTodoEditForm(todo) {
-    const form = document.createElement('form');
-    form.className = 'todo-form todo-dialog-edit-form';
-    form.dataset.todoForm = 'update';
-    form.dataset.id = todo.id;
-    const titleLabel = document.createElement('label');
-    titleLabel.textContent = 'Название задачи';
-    const titleInput = document.createElement('input');
-    titleInput.name = 'todo';
-    titleInput.required = true;
-    titleInput.maxLength = 200;
-    titleInput.value = todo.todo;
-    titleLabel.append(titleInput);
-
-    const userLabel = document.createElement('label');
-    userLabel.textContent = 'ID пользователя';
-    const userInput = document.createElement('input');
-    userInput.name = 'userId';
-    userInput.type = 'number';
-    userInput.min = '1';
-    userInput.step = '1';
-    userInput.required = true;
-    userInput.value = todo.userId;
-    userLabel.append(userInput);
-
-    const completedLabel = document.createElement('label');
-    completedLabel.className = 'todo-checkbox-label';
-    const completedInput = document.createElement('input');
-    completedInput.name = 'completed';
-    completedInput.type = 'checkbox';
-    completedInput.checked = todo.completed;
-    completedLabel.append(completedInput, document.createTextNode(' Выполнена'));
-    const submit = document.createElement('button');
-    submit.type = 'submit';
-    submit.className = 'todo-open-button';
-    submit.textContent = 'Сохранить';
-    const cancel = document.createElement('button');
-    cancel.type = 'button';
-    cancel.className = 'todo-open-button';
-    cancel.dataset.action = 'todo-edit-cancel';
-    cancel.dataset.id = todo.id;
-    cancel.textContent = 'Отмена';
-    form.append(titleLabel, userLabel, completedLabel, submit, cancel);
-    return form;
+    return h('form', { className: 'todo-form todo-dialog-edit-form', dataset: { todoForm: 'update', id: todo.id } },
+      h('label', { textContent: 'Название задачи' },
+        h('input', { name: 'todo', required: true, maxLength: 200, value: todo.todo })),
+      h('label', { textContent: 'ID пользователя' },
+        h('input', { name: 'userId', type: 'number', min: '1', step: '1', required: true, value: todo.userId })),
+      h('label', { className: 'todo-checkbox-label' },
+        h('input', { name: 'completed', type: 'checkbox', checked: todo.completed }),
+        ' Выполнена'),
+      h('button', { type: 'submit', className: 'todo-open-button', textContent: 'Сохранить' }),
+      button('Отмена', 'todo-open-button', { action: 'todo-edit-cancel', id: todo.id }),
+    );
   }
+
+  function toggleCreateTodoForm() {
+    const form = el['todo-create-form'];
+    if (!form || !el.createToggle) return;
+    setCreateFormOpen(form.hidden);
+    if (!form.hidden) form.querySelector('[name="todo"]')?.focus();
+  }
+
+  function setCreateFormOpen(isOpen) {
+    el['todo-create-form'].hidden = !isOpen;
+    el.createToggle.setAttribute('aria-expanded', String(isOpen));
+    el.createToggle.textContent = isOpen ? 'Скрыть форму' : 'Добавить задачу';
+  }
+
+  
+  const todoPayload = (data) => ({
+    todo: data.get('todo'),
+    userId: Number(data.get('userId')),
+    completed: data.get('completed') === 'on',
+  });
+
+  const reportListResult = (listUpdated, success, failure) =>
+    setTodoNotice(listUpdated ? success : failure, listUpdated ? 'success' : 'error');
 
   async function handleTodoSubmit(event) {
     const form = event.target.closest('form[data-todo-form]');
     if (!form) return;
     event.preventDefault();
     if (form.dataset.busy === 'true') return;
-    form.dataset.busy = 'true';
-    form.setAttribute('aria-busy', 'true');
+
+    const isCreate = form.dataset.todoForm === 'create';
     const submit = form.querySelector('[type="submit"]');
     const originalLabel = submit?.textContent;
+    form.dataset.busy = 'true';
+    form.setAttribute('aria-busy', 'true');
     if (submit) {
       submit.disabled = true;
-      submit.textContent = form.dataset.todoForm === 'create' ? 'Добавляем…' : 'Сохраняем…';
+      submit.textContent = isCreate ? 'Добавляем…' : 'Сохраняем…';
     }
 
-    const data = new FormData(form);
-    let pendingUpdateId = null;
+    const payload = todoPayload(new FormData(form));
+    let pendingId = null;
     try {
-      if (form.dataset.todoForm === 'create') {
-        const createdTodo = await window.fakeTodoApi.create({
-          todo: data.get('todo'),
-          userId: Number(data.get('userId')),
-          completed: data.get('completed') === 'on',
-        });
+      if (isCreate) {
+        const created = await window.fakeTodoApi.create(payload);
         form.reset();
-        form.hidden = true;
-        document.querySelector('[data-action="todo-create-toggle"]').textContent = 'Добавить задачу';
-        document.querySelector('[data-action="todo-create-toggle"]').setAttribute('aria-expanded', 'false');
-        elements.todoSearch.value = '';
-        elements.todoFilter.value = 'all';
-        allTodos = [createdTodo, ...allTodos.filter((todo) => todo.id !== createdTodo.id)];
-        todoPage = 1;
+        setCreateFormOpen(false);
+        resetFilters();
+        state.todos = [created, ...state.todos.filter((todo) => todo.id !== created.id)];
+        goToFirstPage();
+        reportListResult(await loadTodos(), 'Задача добавлена.', 'Задача создана, но список не обновился. Попробуйте обновить его.');
+      } else {
+        pendingId = String(form.dataset.id);
+        pendingIds.add(pendingId);
+        const updated = await window.fakeTodoApi.update(pendingId, payload);
+        replaceTodo(updated);
         renderTodos();
         const listUpdated = await loadTodos();
-        setTodoNotice(
-          listUpdated ? 'Задача добавлена.' : 'Задача создана, но список не обновился. Попробуйте обновить его.',
-          listUpdated ? 'success' : 'error',
-        );
-      } else if (form.dataset.todoForm === 'update') {
-        const id = form.dataset.id;
-        pendingUpdateId = String(id);
-        pendingTodoIds.add(pendingUpdateId);
-        const updatedTodo = await window.fakeTodoApi.update(id, {
-          todo: data.get('todo'),
-          userId: Number(data.get('userId')),
-          completed: data.get('completed') === 'on',
-        });
-        allTodos = allTodos.map((todo) => todo.id === updatedTodo.id ? updatedTodo : todo);
-        renderTodos();
-        const listUpdated = await loadTodos();
-        renderTodoDetails(updatedTodo.id);
-        setTodoNotice(
-          listUpdated ? 'Изменения сохранены.' : 'Изменения сохранены, но список не обновился. Попробуйте обновить его.',
-          listUpdated ? 'success' : 'error',
-        );
+        renderTodoDetails(updated.id);
+        reportListResult(listUpdated, 'Изменения сохранены.', 'Изменения сохранены, но список не обновился. Попробуйте обновить его.');
       }
     } catch (error) {
       setTodoNotice(error.message, 'error');
@@ -934,199 +671,153 @@
         submit.disabled = false;
         submit.textContent = originalLabel;
       }
-      if (pendingUpdateId) {
-        pendingTodoIds.delete(pendingUpdateId);
+      if (pendingId) {
+        pendingIds.delete(pendingId);
         renderTodos();
-        await refreshActiveUserProfile();
+        await refreshUserViews();
       }
     }
   }
 
-  async function toggleTodo(id, button) {
-    if (pendingTodoIds.has(String(id))) return;
-    const todo = allTodos.find((item) => item.id === Number(id));
-    if (!todo) return;
-    pendingTodoIds.add(String(id));
-    button.disabled = true;
-    button.setAttribute('aria-busy', 'true');
-    const statusLabel = button.closest('.todo-checkbox-status');
-    statusLabel?.classList.add('is-pending');
-    button.setAttribute('aria-label', button.checked
-      ? '\u0421\u043d\u044f\u0442\u044c \u043e\u0442\u043c\u0435\u0442\u043a\u0443 \u0432\u044b\u043f\u043e\u043b\u043d\u0435\u043d\u0438\u044f \u0437\u0430\u0434\u0430\u0447\u0438'
-      : '\u041e\u0442\u043c\u0435\u0442\u0438\u0442\u044c \u0437\u0430\u0434\u0430\u0447\u0443 \u0432\u044b\u043f\u043e\u043b\u043d\u0435\u043d\u043d\u043e\u0439');
+  
+  async function runPendingAction(id, work, errorPrefix) {
+    const key = String(id);
+    if (pendingIds.has(key) || !findTodo(id)) return;
+    pendingIds.add(key);
     try {
-      const updatedTodo = await window.fakeTodoApi.update(id, { completed: button.checked });
-      allTodos = allTodos.map((item) => item.id === updatedTodo.id ? updatedTodo : item);
-      await loadTodos();
+      await work();
     } catch (error) {
-      setTodoNotice('\u041D\u0435 \u0443\u0434\u0430\u043B\u043E\u0441\u044C \u043E\u0431\u043D\u043E\u0432\u0438\u0442\u044C \u0437\u0430\u0434\u0430\u0447\u0443: ' + error.message, 'error');
+      setTodoNotice(`${errorPrefix}: ${error.message}`, 'error');
     } finally {
-      pendingTodoIds.delete(String(id));
+      pendingIds.delete(key);
       renderTodos();
-      await refreshActiveUserProfile();
+      await refreshUserViews();
     }
   }
 
-  async function deleteTodo(id, button) {
-    if (pendingTodoIds.has(String(id))) return;
-    const todo = allTodos.find((item) => item.id === Number(id));
-    if (!todo) return;
-    pendingTodoIds.add(String(id));
-    button.disabled = true;
-    try {
+  function toggleTodo(id, checkbox) {
+    const key = String(id);
+    if (pendingIds.has(key) || !findTodo(id)) return;
+    checkbox.disabled = true;
+    checkbox.setAttribute('aria-busy', 'true');
+    checkbox.closest('.todo-checkbox-status')?.classList.add('is-pending');
+    checkbox.setAttribute('aria-label', checkbox.checked ? 'Снять отметку выполнения задачи' : 'Отметить задачу выполненной');
+
+    return runPendingAction(id, async () => {
+      replaceTodo(await window.fakeTodoApi.update(id, { completed: checkbox.checked }));
+      await loadTodos();
+    }, 'Не удалось обновить задачу');
+  }
+
+  function deleteTodo(id, deleteButton) {
+    if (pendingIds.has(String(id)) || !findTodo(id)) return;
+    deleteButton.disabled = true;
+
+    return runPendingAction(id, async () => {
       await window.fakeTodoApi.delete(id);
-      allTodos = allTodos.filter((todo) => todo.id !== Number(id));
+      state.todos = state.todos.filter((todo) => todo.id !== Number(id));
       renderTodos();
       await loadTodos();
-    } catch (error) {
-      setTodoNotice('\u041D\u0435 \u0443\u0434\u0430\u043B\u043E\u0441\u044C \u0443\u0434\u0430\u043B\u0438\u0442\u044C \u0437\u0430\u0434\u0430\u0447\u0443: ' + error.message, 'error');
-    } finally {
-      pendingTodoIds.delete(String(id));
-      renderTodos();
-      await refreshActiveUserProfile();
-    }
+    }, 'Не удалось удалить задачу');
   }
-  function setTodoNotice(message, type = '') {
-    if (!elements.todoNotice) return;
-    elements.todoNotice.textContent = message;
-    elements.todoNotice.className = `todo-notice${type ? ` is-${type}` : ''}`;
-  }
-// ..........................................
-  function initializeTask1() {
-    const target = document.getElementById('target-element');
-    if (target) target.textContent = '\u041F\u0440\u0438\u0432\u0435\u0442, \u043C\u0438\u0440!';
 
-    document.querySelectorAll('.old-element').forEach((element) => element.remove());
+  
+  function initTask1() {
+    const target = $('target-element');
+    if (target) target.textContent = 'Привет, мир!';
+    document.querySelectorAll('.old-element').forEach((node) => node.remove());
 
-    if (!elements.task1Result || elements.task1Result.querySelector('.editable-paragraph')) return;
-
-    const paragraph = document.createElement('p');
-    paragraph.className = 'editable-paragraph';
-    paragraph.textContent = '\u042D\u0442\u043E \u0438\u0437\u043C\u0435\u043D\u044F\u0435\u043C\u044B\u0439 \u0430\u0431\u0437\u0430\u0446.';
-    elements.task1Result.append(paragraph);
+    const result = el['task1-result'];
+    if (!result || result.querySelector('.editable-paragraph')) return;
+    result.append(h('p', { className: 'editable-paragraph', textContent: 'Это изменяемый абзац.' }));
   }
 
   function createTask1Element() {
     if (document.querySelector('.new-div')) return;
-
-    const element = document.createElement('div');
-    element.className = 'new-div';
-    element.textContent = '\u042F \u043D\u043E\u0432\u044B\u0439 \u044D\u043B\u0435\u043C\u0435\u043D\u0442';
-    document.body.append(element);
+    document.body.append(h('div', { className: 'new-div', textContent: 'Я новый элемент' }));
   }
 
+  
   function updateTask2ClassList() {
-    if (!elements.task2Target || !elements.task2Output) return;
-
-    const classes = Array.from(elements.task2Target.classList);
-    elements.task2Output.textContent = classes.length ? classes.join(', ') : '(\u043A\u043B\u0430\u0441\u0441\u044B \u043E\u0442\u0441\u0443\u0442\u0441\u0442\u0432\u0443\u044E\u0442)';
+    const target = el['task2-target-element'];
+    const output = el['class-list-output'];
+    if (!target || !output) return;
+    const classes = [...target.classList];
+    output.textContent = classes.length ? classes.join(', ') : '(классы отсутствуют)';
   }
 
-  function initializeTask3() {
-    if (!elements.tableContainer || !elements.tableRows || !elements.tableCols) return;
+  
+  const clampDimension = (value) => {
+    const parsed = Number.parseInt(value, 10);
+    return Number.isFinite(parsed) ? Math.min(20, Math.max(1, parsed)) : 3;
+  };
 
-    elements.tableContainer.addEventListener('click', (event) => {
+  function initTask3() {
+    const { 'table-container': container } = el;
+    if (!container || !el['table-rows'] || !el['table-cols']) return;
+
+    container.addEventListener('click', (event) => {
       const cell = event.target.closest('td[data-color]');
-      if (!cell || !elements.tableContainer.contains(cell)) return;
-
-      const selectedColor = elements.colorPicker?.value || '#3b82f6';
-      cell.dataset.color = cell.dataset.color === selectedColor ? '' : selectedColor;
+      if (!cell) return;
+      const selected = el['cell-color-picker']?.value || '#3b82f6';
+      cell.dataset.color = cell.dataset.color === selected ? '' : selected;
       cell.style.backgroundColor = cell.dataset.color;
       updateColorStats();
     });
-
     generateTable();
   }
 
   function generateTable() {
-    if (!elements.tableContainer || !elements.tableRows || !elements.tableCols) return;
+    const container = el['table-container'];
+    if (!container || !el['table-rows'] || !el['table-cols']) return;
 
-    const rows = clampDimension(elements.tableRows.value);
-    const columns = clampDimension(elements.tableCols.value);
-    elements.tableRows.value = rows;
-    elements.tableCols.value = columns;
+    const rows = (el['table-rows'].value = clampDimension(el['table-rows'].value));
+    const cols = (el['table-cols'].value = clampDimension(el['table-cols'].value));
 
-    const table = document.createElement('table');
-    const body = document.createElement('tbody');
-
-    for (let rowIndex = 0; rowIndex < rows; rowIndex += 1) {
-      const row = document.createElement('tr');
-
-      for (let columnIndex = 0; columnIndex < columns; columnIndex += 1) {
-        const cell = document.createElement('td');
-        cell.dataset.color = '';
-        cell.setAttribute('aria-label', `\u042F\u0447\u0435\u0439\u043A\u0430 ${rowIndex + 1}, ${columnIndex + 1}`);
-        row.append(cell);
-      }
-
-      body.append(row);
-    }
-
-    table.append(body);
-    elements.tableContainer.replaceChildren(table);
+    container.replaceChildren(h('table', {}, h('tbody', {},
+      Array.from({ length: rows }, (_, r) => h('tr', {},
+        Array.from({ length: cols }, (_, c) => h('td', {
+          dataset: { color: '' },
+          attrs: { 'aria-label': `Ячейка ${r + 1}, ${c + 1}` },
+        })))))));
     updateColorStats();
   }
 
-  function clampDimension(value) {
-    const parsedValue = Number.parseInt(value, 10);
-    return Number.isFinite(parsedValue) ? Math.min(20, Math.max(1, parsedValue)) : 3;
-  }
-
   function updateColorStats() {
-    if (!elements.tableContainer || !elements.colorStats) return;
+    const output = el['color-stats-output'];
+    if (!el['table-container'] || !output) return;
 
-    const colorCounts = new Map();
-    elements.tableContainer.querySelectorAll('td[data-color]').forEach((cell) => {
-      if (cell.dataset.color) {
-        colorCounts.set(cell.dataset.color, (colorCounts.get(cell.dataset.color) || 0) + 1);
-      }
+    const counts = new Map();
+    el['table-container'].querySelectorAll('td[data-color]').forEach(({ dataset: { color } }) => {
+      if (color) counts.set(color, (counts.get(color) || 0) + 1);
     });
 
-    const totalColored = Array.from(colorCounts.values()).reduce((total, count) => total + count, 0);
-    if (totalColored === 0) {
-      elements.colorStats.textContent = '\u041D\u0435\u0442 \u0437\u0430\u043A\u0440\u0430\u0448\u0435\u043D\u043D\u044B\u0445 \u044F\u0447\u0435\u0435\u043A. \u041A\u043B\u0438\u043A\u043D\u0438\u0442\u0435 \u043F\u043E \u043B\u044E\u0431\u043E\u0439 \u044F\u0447\u0435\u0439\u043A\u0435.';
+    if (counts.size === 0) {
+      output.textContent = 'Нет закрашенных ячеек. Кликните по любой ячейке.';
       return;
     }
 
-    const summary = document.createTextNode(`\u0412\u0441\u0435\u0433\u043E \u0437\u0430\u043A\u0440\u0430\u0448\u0435\u043D\u043E \u044F\u0447\u0435\u0435\u043A: ${totalColored}. \u041F\u043E \u0446\u0432\u0435\u0442\u0430\u043C: `);
-    const details = [];
-
-    colorCounts.forEach((count, color) => {
-      const item = document.createElement('span');
-      item.className = 'color-stat';
-
-      const swatch = document.createElement('span');
-      swatch.className = 'color-stat__swatch';
-      swatch.style.backgroundColor = color;
-
-      item.append(swatch, document.createTextNode(`${color}: ${count}`));
-      details.push(item);
-    });
-
-    elements.colorStats.replaceChildren(summary);
-    details.forEach((item, index) => {
-      if (index > 0) elements.colorStats.append(document.createTextNode(' | '));
-      elements.colorStats.append(item);
-    });
+    const total = [...counts.values()].reduce((sum, count) => sum + count, 0);
+    const items = [...counts].map(([color, count]) => h('span', { className: 'color-stat' },
+      h('span', { className: 'color-stat__swatch', style: `background-color: ${color}` }),
+      `${color}: ${count}`));
+    const withSeparators = items.flatMap((item, i) => (i ? [' | ', item] : [item]));
+    output.replaceChildren(`Всего закрашено ячеек: ${total}. По цветам: `, ...withSeparators);
   }
 
-  function initializeTheme() {
-    const savedTheme = localStorage.getItem('theme');
-    setTheme(savedTheme === 'dark' ? 'dark' : 'light');
-  }
-
-  function toggleTheme() {
-    const currentTheme = document.documentElement.dataset.theme;
-    setTheme(currentTheme === 'dark' ? 'light' : 'dark');
+  
+  function initTheme() {
+    setTheme(localStorage.getItem('theme') === 'dark' ? 'dark' : 'light');
   }
 
   function setTheme(theme) {
+    const isDark = theme === 'dark';
     document.documentElement.dataset.theme = theme;
     localStorage.setItem('theme', theme);
-
-    if (elements.themeButton) {
-      elements.themeButton.textContent = theme === 'dark' ? '\u2600\uFE0F \u0421\u0432\u0435\u0442\u043B\u0430\u044F' : '\uD83C\uDF19 \u0422\u0435\u043C\u043D\u0430\u044F';
-      elements.themeButton.setAttribute('aria-pressed', String(theme === 'dark'));
+    const themeButton = el['theme-toggle-btn'];
+    if (themeButton) {
+      themeButton.textContent = isDark ? '☀️ Светлая' : '🌙 Тёмная';
+      themeButton.setAttribute('aria-pressed', String(isDark));
     }
   }
 

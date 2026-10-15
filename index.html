@@ -7,6 +7,31 @@
   <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <symbol id="avatar-p1" viewBox="0 0 100 100">
+      <rect width="100" height="100" fill="#000"/>
+      <circle cx="38" cy="40" r="22" fill="#fff"/>
+      <rect x="55" y="55" width="40" height="40" fill="#fff" transform="rotate(20 55 55)"/>
+    </symbol>
+    <symbol id="avatar-p2" viewBox="0 0 100 100">
+      <rect width="100" height="100" fill="#000"/>
+      <polygon points="50,15 85,80 15,80" fill="#fff"/>
+      <circle cx="50" cy="35" r="10" fill="#000"/>
+    </symbol>
+    <symbol id="avatar-p3" viewBox="0 0 100 100">
+      <rect width="100" height="100" fill="#000"/>
+      <rect x="20" y="20" width="30" height="30" fill="#fff"/>
+      <rect x="55" y="55" width="30" height="30" fill="#fff"/>
+    </symbol>
+    <symbol id="avatar-p4" viewBox="0 0 100 100">
+      <rect width="100" height="100" fill="#000"/>
+      <path d="M15 80 Q50 15 85 80 Z" fill="#fff"/>
+    </symbol>
+  </defs>
+</svg>
+
 <div class="wrap">
   <nav class="navbar" id="navbar">
     <button class="active" data-page="home">Главная</button>
@@ -17,9 +42,8 @@
     <button data-page="task2">Задание 2</button>
     <button data-page="task3">Задание 3</button>
     <button data-page="todos">Менеджер задач</button>
-    
     <div class="nav-divider"></div>
-    <button id="theme-toggle-btn" class="theme-toggle" data-action="toggle-theme" aria-label="Переключить темную тему">🌙 Темная</button>
+    <button id="theme-toggle-btn" data-action="toggle-theme" aria-label="Переключить темную тему">🌙 Тёмная</button>
     <div id="member-tabs" hidden>
       <div class="nav-divider"></div>
       <button data-target="p1" data-member="p1">Ибрагим</button>
@@ -44,45 +68,47 @@
       <p class="label">Участники</p>
       <div class="roster-grid">
         <button class="roster-item" data-action="open-member" data-member="p1">
-          <div class="avatar">
-            <svg viewBox="0 0 100 100">
-              <rect width="100" height="100" fill="#000"/>
-              <circle cx="38" cy="40" r="22" fill="#fff"/>
-              <rect x="55" y="55" width="40" height="40" fill="#fff" transform="rotate(20 55 55)"/>
-            </svg>
-          </div>
+          <div class="avatar"><svg viewBox="0 0 100 100"><use href="#avatar-p1"/></svg></div>
           <div class="name">Ибрагим</div>
         </button>
         <button class="roster-item" data-action="open-member" data-member="p2">
-          <div class="avatar">
-            <svg viewBox="0 0 100 100">
-              <rect width="100" height="100" fill="#000"/>
-              <polygon points="50,15 85,80 15,80" fill="#fff"/>
-              <circle cx="50" cy="35" r="10" fill="#000"/>
-            </svg>
-          </div>
+          <div class="avatar"><svg viewBox="0 0 100 100"><use href="#avatar-p2"/></svg></div>
           <div class="name">Алиби</div>
         </button>
         <button class="roster-item" data-action="open-member" data-member="p3">
-          <div class="avatar">
-            <svg viewBox="0 0 100 100">
-              <rect width="100" height="100" fill="#000"/>
-              <rect x="20" y="20" width="30" height="30" fill="#fff"/>
-              <rect x="55" y="55" width="30" height="30" fill="#fff"/>
-            </svg>
-          </div>
+          <div class="avatar"><svg viewBox="0 0 100 100"><use href="#avatar-p3"/></svg></div>
           <div class="name">Нурболат</div>
         </button>
         <button class="roster-item" data-action="open-member" data-member="p4">
-          <div class="avatar">
-            <svg viewBox="0 0 100 100">
-              <rect width="100" height="100" fill="#000"/>
-              <path d="M15 80 Q50 15 85 80 Z" fill="#fff"/>
-            </svg>
-          </div>
+          <div class="avatar"><svg viewBox="0 0 100 100"><use href="#avatar-p4"/></svg></div>
           <div class="name">Алихан</div>
         </button>
       </div>
+    </div>
+  </section>
+
+  <section class="page" id="page-task1">
+    <div class="masthead">
+      <h1>Практическое задание 1</h1>
+      <p>Работа с DOM-деревом на JavaScript</p>
+    </div>
+
+    <div class="section">
+      <h3>Условие задачи</h3>
+      <ul class="highlights">
+        <li>Найдите элемент по ID и измените его текст на «Привет, мир!».</li>
+        <li>Создайте новый элемент &lt;div&gt; с классом <mark>new-div</mark> и текстом «Я новый элемент», добавив его в конец &lt;body&gt;.</li>
+        <li>Удалите элемент с классом <mark>old-element</mark>.</li>
+        <li>Создайте абзац с текстом «Это изменяемый абзац.» и изменяйте его цвет и размер шрифта по клику.</li>
+      </ul>
+    </div>
+
+    <div class="section">
+      <h3>Результат выполнения</h3>
+      <div id="target-element" class="task1-target">Исходный текст элемента.</div>
+      <div class="old-element task1-old-element">Этот элемент будет удалён скриптом.</div>
+      <div id="task1-result"></div>
+      <button class="cta task1-create-button" data-action="create-task1-element">Создать новый элемент</button>
     </div>
   </section>
 
@@ -93,17 +119,38 @@
     </div>
 
     <div class="task-box">
-      <div id="task2-target-element" class="demo-box card feature">
-        Тестовый блок
-      </div>
+      <div id="task2-target-element" class="demo-box card feature">Тестовый блок</div>
 
       <div class="actions">
-        <button id="toggle-btn" class="cta-btn" data-action="toggle-task2-class">Переключить класс active</button>
+        <button class="cta-btn" data-action="toggle-task2-class">Переключить класс active</button>
       </div>
 
       <div class="output-section">
         <h3>Список классов элемента:</h3>
-        <p id="class-list-output" class="class-list-badge">Загрузка...</p>
+        <p id="class-list-output">Загрузка...</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="page" id="page-task3">
+    <div class="masthead">
+      <h1>Задание 3: Генератор таблицы и статистика</h1>
+      <p>Создание таблицы заданного размера, изменение цвета ячеек и подсчет</p>
+    </div>
+
+    <div class="task-box">
+      <div class="table-controls">
+        <label>Строк: <input type="number" id="table-rows" min="1" max="20" value="3"></label>
+        <label>Столбцов: <input type="number" id="table-cols" min="1" max="20" value="3"></label>
+        <label>Цвет заливки: <input type="color" id="cell-color-picker" value="#3b82f6"></label>
+        <button class="cta-btn" data-action="generate-table">Создать таблицу</button>
+      </div>
+
+      <div id="table-container" class="table-container"></div>
+
+      <div class="output-section table-output">
+        <h3>Статистика цветов:</h3>
+        <p id="color-stats-output">Кликните по ячейкам таблицы, чтобы изменить их цвет.</p>
       </div>
     </div>
   </section>
@@ -169,7 +216,7 @@
     </div>
   </section>
 
-  <section class="page user-profile-page" id="page-user">
+  <section class="page" id="page-user">
     <div class="masthead">
       <a class="todo-open-button user-profile-back" href="#todos">← К менеджеру задач</a>
       <h1 id="user-profile-title">Профиль пользователя</h1>
@@ -194,30 +241,6 @@
     <div id="todo-user-dialog-content" class="todo-user-dialog-content" aria-live="polite"></div>
   </dialog>
 
-  
-  <section class="page" id="page-task3">
-    <div class="masthead">
-      <h1>Задание 3: Генератор таблицы и статистика</h1>
-      <p>Создание таблицы заданного размера, изменение цвета ячеек и подсчет</p>
-    </div>
-
-    <div class="task-box">
-      <div class="controls-group table-controls">
-        <label>Строк: <input type="number" id="table-rows" min="1" max="20" value="3"></label>
-        <label>Столбцов: <input type="number" id="table-cols" min="1" max="20" value="3"></label>
-        <label>Цвет заливки: <input type="color" id="cell-color-picker" value="#3b82f6"></label>
-        <button class="cta-btn" data-action="generate-table">Создать таблицу</button>
-      </div>
-
-      <div id="table-container" class="table-container"></div>
-
-      <div class="output-section table-output">
-        <h3>Статистика цветов:</h3>
-        <p id="color-stats-output">Кликните по ячейкам таблицы, чтобы изменить их цвет.</p>
-      </div>
-    </div>
-  </section>
-
   <section class="page" id="page-resume">
     <div class="masthead">
       <h1>Состав команды</h1>
@@ -226,19 +249,11 @@
 
     <div class="panel active" id="p1">
       <div class="profile-head">
-        <div class="avatar-box">
-          <svg viewBox="0 0 100 100">
-            <rect width="100" height="100" fill="#000"/>
-            <circle cx="38" cy="40" r="22" fill="#fff"/>
-            <rect x="55" y="55" width="40" height="40" fill="#fff" transform="rotate(20 55 55)"/>
-          </svg>
-        </div>
+        <div class="avatar-box"><svg viewBox="0 0 100 100"><use href="#avatar-p1"/></svg></div>
         <div class="info">
           <h2>Эгембердиев Ибрагим</h2>
           <div class="role">Начинающий Java-разработчик</div>
-          <div class="meta">
-            <div><strong>19</strong> лет</div>
-          </div>
+          <div class="meta"><div><strong>19</strong> лет</div></div>
         </div>
       </div>
 
@@ -268,19 +283,11 @@
 
     <div class="panel" id="p2">
       <div class="profile-head">
-        <div class="avatar-box">
-          <svg viewBox="0 0 100 100">
-            <rect width="100" height="100" fill="#000"/>
-            <polygon points="50,15 85,80 15,80" fill="#fff"/>
-            <circle cx="50" cy="35" r="10" fill="#000"/>
-          </svg>
-        </div>
+        <div class="avatar-box"><svg viewBox="0 0 100 100"><use href="#avatar-p2"/></svg></div>
         <div class="info">
           <h2>Алиби Тулеугалиев</h2>
           <div class="role">Студент, спортсмен и организатор</div>
-          <div class="meta">
-            <div><strong>3</strong> курс</div>
-          </div>
+          <div class="meta"><div><strong>3</strong> курс</div></div>
         </div>
       </div>
 
@@ -312,19 +319,11 @@
 
     <div class="panel" id="p3">
       <div class="profile-head">
-        <div class="avatar-box">
-          <svg viewBox="0 0 100 100">
-            <rect width="100" height="100" fill="#000"/>
-            <rect x="20" y="20" width="30" height="30" fill="#fff"/>
-            <rect x="55" y="55" width="30" height="30" fill="#fff"/>
-          </svg>
-        </div>
+        <div class="avatar-box"><svg viewBox="0 0 100 100"><use href="#avatar-p3"/></svg></div>
         <div class="info">
           <h2>Оралов Нурболат</h2>
           <div class="role">Вычислительная техника и ПО</div>
-          <div class="meta">
-            <div><strong>3</strong> курс, AIU</div>
-          </div>
+          <div class="meta"><div><strong>3</strong> курс, AIU</div></div>
         </div>
       </div>
 
@@ -354,18 +353,11 @@
 
     <div class="panel" id="p4">
       <div class="profile-head">
-        <div class="avatar-box">
-          <svg viewBox="0 0 100 100">
-            <rect width="100" height="100" fill="#000"/>
-            <path d="M15 80 Q50 15 85 80 Z" fill="#fff"/>
-          </svg>
-        </div>
+        <div class="avatar-box"><svg viewBox="0 0 100 100"><use href="#avatar-p4"/></svg></div>
         <div class="info">
           <h2>Полатов Алихан</h2>
           <div class="role">Предприниматель</div>
-          <div class="meta">
-            <div><strong>19</strong> лет</div>
-          </div>
+          <div class="meta"><div><strong>19</strong> лет</div></div>
         </div>
       </div>
 
@@ -402,35 +394,7 @@
       </div>
     </div>
   </section>
-
-  <section class="page" id="page-task1">
-    <div class="masthead">
-      <h1>Практическое задание 1</h1>
-      <p>Работа с DOM-деревом на JavaScript</p>
-    </div>
-
-    <div class="section">
-      <h3>Условие задачи</h3>
-      <ul class="highlights">
-        <li>Найдите элемент по ID и измените его текст на «Привет, мир!».</li>
-        <li>Создайте новый элемент &lt;div&gt; с классом <mark>new-div</mark> и текстом «Я новый элемент», добавив его в конец &lt;body&gt;.</li>
-        <li>Удалите элемент с классом <mark>old-element</mark>.</li>
-        <li>Создайте абзац с текстом «Это изменяемый абзац.» и изменяйте его цвет и размер шрифта по клику.</li>
-      </ul>
-    </div>
-
-    <div class="section">
-      <h3>Результат выполнения</h3>
-      <div id="target-element" class="task1-target">Исходный текст элемента.</div>
-      <div class="old-element task1-old-element">Этот элемент будет удалён скриптом.</div>
-      <div id="task1-result"></div>
-      <button class="cta task1-create-button" data-action="create-task1-element">Создать новый элемент</button>
-    </div>
-  </section>
-
-
 </div>
-<div></div>
 <script src="js/fake-api.js"></script>
 <script src="js/script.js"></script>
 </body>

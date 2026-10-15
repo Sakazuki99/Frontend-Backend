@@ -5,23 +5,35 @@
   const createdTodos = new Map();
   const deletedTodoIds = new Set();
 
+  const toId = (value) => {
+    const id = Number(value);
+    return Number.isInteger(id) && id > 0 ? id : null;
+  };
+
   async function request(url, options) {
     const response = await fetch(url, options);
-    let data;
-    try {
-      data = await response.json();
-    } catch {
-      data = null;
-    }
+    const data = await response.json().catch(() => null);
 
     if (!response.ok) {
       const error = new Error(data?.message || `Ошибка API (${response.status}).`);
       error.status = response.status;
       throw error;
     }
-
     return data;
   }
+
+  const sendJson = (url, method, body) => request(url, {
+    method,
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body),
+  });
+
+  
+  const fieldRules = {
+    todo: [(v) => typeof v === 'string' && v.trim(), 'Название задачи должно быть непустой строкой.', (v) => v.trim()],
+    completed: [(v) => typeof v === 'boolean', 'Статус задачи должен быть true или false.'],
+    userId: [(v) => Number.isInteger(v) && v > 0, 'ID пользователя должен быть положительным целым числом.'],
+  };
 
   function validateTodoFields(input, requireTitle = false) {
     if (!input || typeof input !== 'object' || Array.isArray(input)) {
@@ -29,104 +41,75 @@
     }
 
     const fields = {};
-    if (Object.hasOwn(input, 'todo')) {
-      if (typeof input.todo !== 'string' || !input.todo.trim()) {
-        throw new TypeError('Название задачи должно быть непустой строкой.');
-      }
-      fields.todo = input.todo.trim();
-    } else if (requireTitle) {
-      throw new TypeError('Для создания задачи укажите название.');
+    for (const [name, [isValid, message, normalize = (v) => v]] of Object.entries(fieldRules)) {
+      if (!Object.hasOwn(input, name)) continue;
+      if (!isValid(input[name])) throw new TypeError(message);
+      fields[name] = normalize(input[name]);
     }
 
-    if (Object.hasOwn(input, 'completed')) {
-      if (typeof input.completed !== 'boolean') {
-        throw new TypeError('Статус задачи должен быть true или false.');
-      }
-      fields.completed = input.completed;
-    }
-
-    if (Object.hasOwn(input, 'userId')) {
-      if (!Number.isInteger(input.userId) || input.userId < 1) {
-        throw new TypeError('ID пользователя должен быть положительным целым числом.');
-      }
-      fields.userId = input.userId;
-    }
-
-    if (!requireTitle && Object.keys(fields).length === 0) {
-      throw new TypeError('Укажите хотя бы одно поле для обновления.');
-    }
-
+    if (requireTitle && !('todo' in fields)) throw new TypeError('Для создания задачи укажите название.');
+    if (!requireTitle && Object.keys(fields).length === 0) throw new TypeError('Укажите хотя бы одно поле для обновления.');
     return fields;
   }
 
-  function normalizeTodo(todo) {
-    return { ...todo, id: Number(todo.id) };
-  }
+  const normalizeTodo = (todo) => ({ ...todo, id: Number(todo.id) });
 
   async function getAll() {
-    const data = await request(`${todosUrl}?limit=0`);
-    const todos = data.todos
+    const { todos: serverTodos } = await request(`${todosUrl}?limit=0`);
+    const todos = serverTodos
       .filter((todo) => !deletedTodoIds.has(Number(todo.id)))
-      .map((todo) => {
-        const id = Number(todo.id);
-        return { ...todo, ...(updatedTodos.get(id) || {}) };
-      });
+      .map((todo) => ({ ...todo, ...updatedTodos.get(Number(todo.id)) }));
     const serverIds = new Set(todos.map((todo) => Number(todo.id)));
 
     createdTodos.forEach((todo, id) => {
       if (!deletedTodoIds.has(id) && !serverIds.has(id)) todos.push({ ...todo });
     });
-
     return todos;
   }
 
   async function getById(id) {
-    const todoId = Number(id);
-    if (!Number.isInteger(todoId) || todoId < 1 || deletedTodoIds.has(todoId)) return null;
+    const todoId = toId(id);
+    if (!todoId || deletedTodoIds.has(todoId)) return null;
 
-    const localTodo = createdTodos.get(todoId) || updatedTodos.get(todoId);
-    if (localTodo && createdTodos.has(todoId)) return { ...localTodo };
+    if (createdTodos.has(todoId)) return { ...createdTodos.get(todoId) };
+    const localTodo = updatedTodos.get(todoId);
 
     try {
-      const todo = normalizeTodo(await request(`${todosUrl}/${todoId}`));
-      return { ...todo, ...(updatedTodos.get(todoId) || {}) };
+      return { ...normalizeTodo(await request(`${todosUrl}/${todoId}`)), ...localTodo };
     } catch (error) {
       if (error.status === 404) return localTodo ? { ...localTodo } : null;
       throw error;
     }
   }
 
+  async function requireTodo(id) {
+    const todo = await getById(id);
+    if (!todo) throw new Error(`Задача с ID ${id} не найдена.`);
+    return todo;
+  }
+
   async function getUserById(id) {
-    const userId = Number(id);
-    if (!Number.isInteger(userId) || userId < 1) return null;
-    return request(`${usersUrl}/${userId}`);
+    const userId = toId(id);
+    return userId ? request(`${usersUrl}/${userId}`) : null;
   }
 
   async function getByUserId(id) {
-    const userId = Number(id);
-    if (!Number.isInteger(userId) || userId < 1) return [];
-    const todos = await getAll();
-    return todos
+    const userId = toId(id);
+    if (!userId) return [];
+    return (await getAll())
       .filter((todo) => Number(todo.userId) === userId)
       .sort((left, right) => Number(right.id) - Number(left.id));
   }
 
   async function create(input) {
     const fields = validateTodoFields(input, true);
-    const payload = {
-      todo: fields.todo,
-      completed: fields.completed ?? false,
-      userId: fields.userId ?? 1,
-    };
-    const result = normalizeTodo(await request(`${todosUrl}/add`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload),
-    }));
+    const payload = { todo: fields.todo, completed: fields.completed ?? false, userId: fields.userId ?? 1 };
+    const result = normalizeTodo(await sendJson(`${todosUrl}/add`, 'POST', payload));
 
-    let id = result.id;
+    let { id } = result;
     const knownIds = [...createdTodos.keys(), ...updatedTodos.keys()];
     if (knownIds.includes(id)) id = Math.max(id, ...knownIds) + 1;
+
     const todo = { ...result, ...payload, id };
     createdTodos.set(id, todo);
     deletedTodoIds.delete(id);
@@ -136,14 +119,9 @@
   async function update(id, input) {
     const todoId = Number(id);
     const fields = validateTodoFields(input);
-    const currentTodo = await getById(todoId);
-    if (!currentTodo) throw new Error(`Задача с ID ${id} не найдена.`);
+    const currentTodo = await requireTodo(todoId);
 
-    const result = await request(`${todosUrl}/${todoId}`, {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(fields),
-    });
+    const result = await sendJson(`${todosUrl}/${todoId}`, 'PATCH', fields);
     const updatedTodo = { ...currentTodo, ...result, ...fields, id: todoId };
     updatedTodos.set(todoId, updatedTodo);
     if (createdTodos.has(todoId)) createdTodos.set(todoId, updatedTodo);
@@ -152,8 +130,7 @@
 
   async function remove(id) {
     const todoId = Number(id);
-    const currentTodo = await getById(todoId);
-    if (!currentTodo) throw new Error(`Задача с ID ${id} не найдена.`);
+    const currentTodo = await requireTodo(todoId);
 
     const result = await request(`${todosUrl}/${todoId}`, { method: 'DELETE' });
     deletedTodoIds.add(todoId);
@@ -163,13 +140,6 @@
   }
 
   window.fakeTodoApi = Object.freeze({
-    getAll,
-    getById,
-    getUserById,
-    getByUserId,
-    create,
-    update,
-    remove,
-    delete: remove,
+    getAll, getById, getUserById, getByUserId, create, update, remove, delete: remove,
   });
 })();
