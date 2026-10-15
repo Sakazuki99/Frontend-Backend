@@ -1,6 +1,7 @@
 (() => {
   const todosUrl = 'https://dummyjson.com/todos';
   const usersUrl = 'https://dummyjson.com/users';
+  const requestTimeoutMs = 12000;
   const updatedTodos = new Map();
   const createdTodos = new Map();
   const deletedTodoIds = new Set();
@@ -11,15 +12,37 @@
   };
 
   async function request(url, options) {
-    const response = await fetch(url, options);
-    const data = await response.json().catch(() => null);
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), requestTimeoutMs);
 
-    if (!response.ok) {
-      const error = new Error(data?.message || `Ошибка API (${response.status}).`);
-      error.status = response.status;
+    try {
+      const response = await fetch(url, {
+        ...(options || {}),
+        signal: controller.signal,
+      });
+
+      let data;
+      try {
+        data = await response.json();
+      } catch (error) {
+        if (error.name === 'AbortError' || error.name === 'TimeoutError') throw error;
+        data = null;
+      }
+
+      if (!response.ok) {
+        const error = new Error(data?.message || `Ошибка API (${response.status}).`);
+        error.status = response.status;
+        throw error;
+      }
+      return data;
+    } catch (error) {
+      if (error.name === 'AbortError' || error.name === 'TimeoutError') {
+        throw new Error('API не ответил за 12 секунд. Проверьте подключение и попробуйте ещё раз.');
+      }
       throw error;
+    } finally {
+      clearTimeout(timeoutId);
     }
-    return data;
   }
 
   const sendJson = (url, method, body) => request(url, {
@@ -93,6 +116,12 @@
     return userId ? request(`${usersUrl}/${userId}`) : null;
   }
 
+  async function getUsers() {
+    const { users } = await request(usersUrl + '?limit=0&select=id,firstName,lastName,image');
+    if (!Array.isArray(users)) throw new Error('Не удалось загрузить список пользователей.');
+    return users;
+  }
+
   async function getByUserId(id) {
     const userId = toId(id);
     if (!userId) return [];
@@ -140,6 +169,6 @@
   }
 
   window.fakeTodoApi = Object.freeze({
-    getAll, getById, getUserById, getByUserId, create, update, remove, delete: remove,
+    getAll, getById, getUserById, getUsers, getByUserId, create, update, remove, delete: remove,
   });
 })();

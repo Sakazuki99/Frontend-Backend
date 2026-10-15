@@ -34,8 +34,8 @@
   };
   const userCache = new Map();
   const userViews = new WeakMap(); 
-  const saveQueue = new Map(); // id задачи -> Promise: изменения одной задачи уходят на сервер строго по очереди
-  let userDirectory = null; // id -> {firstName, lastName, image}; грузится одним запросом
+  const saveQueue = new Map(); 
+  let userDirectory = null; 
   let sortFieldSeq = 0;
   const el = {};
 
@@ -89,7 +89,7 @@
       if (state.todos.length) renderTodos();
       refreshUserViews();
     } catch {
-      // Без справочника показываем «Пользователь #ID» — не критично.
+      
     }
   }
 
@@ -130,7 +130,7 @@
       const { id } = checkbox.dataset;
       const scopeId = checkbox.closest('#todo-list, #user-profile-content, #todo-user-dialog-content')?.id;
       toggleTodo(id, checkbox.checked);
-      // Карточки перерисованы — возвращаем фокус клавиатурным пользователям.
+      
       if (scopeId) document.querySelector(`#${scopeId} [data-action="todo-toggle"][data-id="${id}"]`)?.focus();
     }
   }
@@ -168,7 +168,7 @@
     }
 
     if (target instanceof HTMLDialogElement) {
-      // Клик по ::backdrop приходит с target = dialog; клики по отступам самого окна игнорируем.
+      
       const { left, right, top, bottom } = target.getBoundingClientRect();
       const inside = event.clientX >= left && event.clientX <= right && event.clientY >= top && event.clientY <= bottom;
       if (!inside) target.close();
@@ -320,7 +320,7 @@
   }
 
   
-  // Обновляем уже открытые профили из локального состояния — без повторных запросов и «мигания».
+  
   function refreshUserViews() {
     [el['user-profile-content'], el['todo-user-dialog-content']].forEach((container) => {
       const view = userViews.get(container);
@@ -667,7 +667,7 @@
 
     const payload = todoPayload(new FormData(form));
 
-    // Редактирование — оптимистично: окно сразу показывает новые данные, сервер получает запрос в фоне.
+    
     if (form.dataset.todoForm !== 'create') {
       payload.todo = payload.todo.trim();
       if (!payload.todo) {
@@ -679,7 +679,7 @@
       return;
     }
 
-    // Создание ждёт ответ сервера: id новой задачи выдаёт API.
+    
     const submit = form.querySelector('[type="submit"]');
     const originalLabel = submit?.textContent;
     form.dataset.busy = 'true';
@@ -708,11 +708,9 @@
     }
   }
 
-  // ---- Оптимистичные изменения -------------------------------------------------------------
-  // Сначала меняем локальное состояние и интерфейс, затем отправляем запрос.
-  // Запросы по одной задаче идут по очереди; при ошибке изменение откатывается.
+  
   function enqueueSave(todoId, work) {
-    const task = (saveQueue.get(todoId) ?? Promise.resolve()).then(work); // work сам ловит свои ошибки
+    const task = (saveQueue.get(todoId) ?? Promise.resolve()).then(work); 
     saveQueue.set(todoId, task);
     task.then(() => { if (saveQueue.get(todoId) === task) saveQueue.delete(todoId); });
     return task;
@@ -722,7 +720,7 @@
     renderTodos();
     refreshUserViews();
     const dialog = el['todo-detail-dialog'];
-    // Не выкидываем пользователя из формы редактирования — перерисовываем только режим просмотра.
+    
     if (dialog?.open && state.activeDialogId === String(todoId) && !dialog.querySelector('form')) renderTodoDetails(todoId);
   }
 
@@ -864,7 +862,7 @@
       const saved = localStorage.getItem('theme');
       if (saved === 'dark' || saved === 'light') theme = saved;
     } catch {
-      // Хранилище может быть запрещено настройками браузера.
+      
     }
     setTheme(theme);
   }
@@ -878,7 +876,7 @@
     try {
       localStorage.setItem('theme', theme);
     } catch {
-      // Переключение темы работает и без сохранения настройки.
+      
     }
   }
 
