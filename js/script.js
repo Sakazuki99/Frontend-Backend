@@ -75,6 +75,7 @@
     document.addEventListener('change', handleChange);
     document.addEventListener('submit', handleTodoSubmit);
     window.addEventListener('hashchange', handleRoute);
+    el['todo-create-dialog']?.addEventListener('close', () => syncCreateToggle(false));
     handleRoute();
 
     el['todo-search']?.addEventListener('input', () => {
@@ -93,16 +94,33 @@
       if (state.todos.length) renderTodos();
       refreshUserViews();
     } catch {
-      
+      userDirectory = null;
+      populateUserSelectors();
     }
   }
 
   function populateUserSelectors() {
-    if (!userDirectory) return;
-    const users = [...userDirectory.values()].sort((a, b) => getUserName(a).localeCompare(getUserName(b), 'ru'));
-    if (el['todo-user-filter']) el['todo-user-filter'].replaceChildren(h('option', { value: 'all', textContent: 'Все пользователи' }), ...users.map((user) => h('option', { value: String(user.id), textContent: getUserName(user) })));
+    const usersById = new Map(userDirectory || []);
+    state.todos.forEach(({ userId }) => {
+      const id = Number(userId);
+      if (isValidId(id) && !usersById.has(id)) usersById.set(id, { id });
+    });
+    if (usersById.size === 0) usersById.set(1, { id: 1 });
+    const users = [...usersById.values()].sort((a, b) => getUserName(a).localeCompare(getUserName(b), 'ru'));
+    if (el['todo-user-filter']) {
+      const selectedUser = el['todo-user-filter'].value;
+      el['todo-user-filter'].replaceChildren(
+        h('option', { value: 'all', textContent: 'Все пользователи' }),
+        ...users.map((user) => h('option', { value: String(user.id), textContent: getUserName(user) })),
+      );
+      el['todo-user-filter'].value = selectedUser || 'all';
+    }
     const assignee = el['todo-create-form']?.elements.namedItem('userId');
-    if (assignee) assignee.replaceChildren(...users.map((user) => h('option', { value: String(user.id), textContent: getUserName(user) })));
+    if (assignee) {
+      const selectedUser = assignee.value;
+      assignee.replaceChildren(...users.map((user) => h('option', { value: String(user.id), textContent: getUserName(user) })));
+      if (selectedUser && usersById.has(Number(selectedUser))) assignee.value = selectedUser;
+    }
   }
 
   const loadUserTodos = (id) => state.todosLoaded
@@ -223,6 +241,9 @@
   function showPage(pageId) {
     const page = $(`page-${pageId}`);
     if (!page) return;
+    el['todo-create-dialog']?.close();
+    el['todo-detail-dialog']?.close();
+    el['todo-user-dialog']?.close();
     document.body.dataset.page = pageId;
     document.querySelectorAll('.page').forEach((item) => item.classList.toggle('active', item === page));
     document.querySelectorAll('#navbar > button[data-page]').forEach((btn) => {
@@ -571,6 +592,7 @@
 
       state.todos = todos;
       state.todosLoaded = true;
+      populateUserSelectors();
       setTodoNotice('');
       try {
         renderTodos();
@@ -694,20 +716,43 @@
 
   function toggleCreateTodoForm(userId = '') {
     const form = el['todo-create-form'];
-    if (!form || !el['todo-create-dialog']) return;
+    const dialog = el['todo-create-dialog'];
+    if (!form || !dialog) return;
     const userSelect = form.elements.namedItem('userId');
+    if (userSelect && userSelect.options.length === 0) populateUserSelectors();
     const userField = userSelect?.closest('label');
     if (userField) userField.hidden = Boolean(userId);
-    if (userId && userSelect) userSelect.value = String(userId);
-    if (!el['todo-create-dialog'].open) setCreateFormOpen(true);
+    if (userId && userSelect) {
+      const id = String(userId);
+      if (!Array.from(userSelect.options).some((option) => option.value === id)) {
+        userSelect.add(h('option', { value: id, textContent: `Пользователь #${id}` }));
+      }
+      userSelect.value = id;
+    } else if (userSelect && userSelect.options.length) {
+      userSelect.value = userSelect.options[0].value;
+    }
+    if (dialog.open && !userId) {
+      setCreateFormOpen(false);
+      return;
+    }
+    if (!dialog.open) setCreateFormOpen(true);
     form.querySelector('[name="todo"]')?.focus();
   }
 
   function setCreateFormOpen(isOpen) {
-    if (isOpen) el['todo-create-dialog']?.showModal();
-    else el['todo-create-dialog']?.close();
+    const dialog = el['todo-create-dialog'];
+    if (isOpen && dialog && !dialog.open) dialog.showModal();
+    else if (!isOpen && dialog?.open) dialog.close();
+    syncCreateToggle(isOpen);
+  }
+
+  function syncCreateToggle(isOpen) {
+    if (!el.createToggle) return;
     el.createToggle.setAttribute('aria-expanded', String(isOpen));
-    el.createToggle.textContent = isOpen ? 'Скрыть форму' : 'Добавить задачу';
+    el.createToggle.replaceChildren(
+      h('span', { textContent: isOpen ? '×' : '＋', attrs: { 'aria-hidden': 'true' } }),
+      ` ${isOpen ? 'Закрыть окно' : 'Добавить задачу'}`,
+    );
   }
 
   
