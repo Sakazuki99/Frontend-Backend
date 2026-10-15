@@ -1,0 +1,407 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Команда — Резюме, Проект и Задания</title>
+  <meta name="description" content="Учебный сайт команды: профили участников, практические задания и менеджер задач.">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='22'/%3E%3Ccircle cx='50' cy='50' r='24' fill='%23fff'/%3E%3C/svg%3E">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap">
+  <link rel="stylesheet" href="css/style.css">
+  <script>try{var t=localStorage.getItem('theme');if(t!=='dark'&&t!=='light')t=matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light';document.documentElement.dataset.theme=t}catch(e){}</script>
+</head>
+<body>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <symbol id="avatar-p1" viewBox="0 0 100 100">
+      <rect width="100" height="100" fill="#000"/>
+      <circle cx="38" cy="40" r="22" fill="#fff"/>
+      <rect x="55" y="55" width="40" height="40" fill="#fff" transform="rotate(20 55 55)"/>
+    </symbol>
+    <symbol id="avatar-p2" viewBox="0 0 100 100">
+      <rect width="100" height="100" fill="#000"/>
+      <polygon points="50,15 85,80 15,80" fill="#fff"/>
+      <circle cx="50" cy="35" r="10" fill="#000"/>
+    </symbol>
+    <symbol id="avatar-p3" viewBox="0 0 100 100">
+      <rect width="100" height="100" fill="#000"/>
+      <rect x="20" y="20" width="30" height="30" fill="#fff"/>
+      <rect x="55" y="55" width="30" height="30" fill="#fff"/>
+    </symbol>
+    <symbol id="avatar-p4" viewBox="0 0 100 100">
+      <rect width="100" height="100" fill="#000"/>
+      <path d="M15 80 Q50 15 85 80 Z" fill="#fff"/>
+    </symbol>
+  </defs>
+</svg>
+
+<div class="wrap">
+  <nav class="navbar" id="navbar">
+    <button class="active" data-page="home">Главная</button>
+    <div class="nav-divider"></div>
+    <button data-page="resume">Резюме команды</button>
+    <div class="nav-divider"></div>
+    <button data-page="task1">Задание 1</button>
+    <button data-page="task2">Задание 2</button>
+    <button data-page="task3">Задание 3</button>
+    <button data-page="todos">Менеджер задач</button>
+    <div class="nav-divider"></div>
+    <button id="theme-toggle-btn" data-action="toggle-theme" type="button">🌙 Тёмная</button>
+    <div id="member-tabs" hidden>
+      <div class="nav-divider"></div>
+      <button class="active" data-target="p1" data-member="p1">Ибрагим</button>
+      <button data-target="p2" data-member="p2">Алиби</button>
+      <button data-target="p3" data-member="p3">Нурболат</button>
+      <button data-target="p4" data-member="p4">Алихан</button>
+    </div>
+  </nav>
+
+  <section class="page active" id="page-home">
+    <div class="hero">
+      <p class="kicker">Командный проект</p>
+      <h1>Четыре человека, один проект</h1>
+      <p>Здесь собрана информация о команде — кто мы, чем занимаемся и на каком этапе находится работа. Полный состав и профиль каждого участника — во вкладке «Резюме».</p>
+      <button class="cta" data-action="open-member" data-member="p1">
+        Смотреть состав команды
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg>
+      </button>
+    </div>
+
+    <div class="roster">
+      <p class="label">Участники</p>
+      <div class="roster-grid">
+        <button class="roster-item" data-action="open-member" data-member="p1">
+          <div class="avatar"><svg viewBox="0 0 100 100"><use href="#avatar-p1"/></svg></div>
+          <div class="name">Ибрагим</div>
+        </button>
+        <button class="roster-item" data-action="open-member" data-member="p2">
+          <div class="avatar"><svg viewBox="0 0 100 100"><use href="#avatar-p2"/></svg></div>
+          <div class="name">Алиби</div>
+        </button>
+        <button class="roster-item" data-action="open-member" data-member="p3">
+          <div class="avatar"><svg viewBox="0 0 100 100"><use href="#avatar-p3"/></svg></div>
+          <div class="name">Нурболат</div>
+        </button>
+        <button class="roster-item" data-action="open-member" data-member="p4">
+          <div class="avatar"><svg viewBox="0 0 100 100"><use href="#avatar-p4"/></svg></div>
+          <div class="name">Алихан</div>
+        </button>
+      </div>
+    </div>
+  </section>
+
+  <section class="page" id="page-task1">
+    <div class="masthead">
+      <h1>Практическое задание 1</h1>
+      <p>Работа с DOM-деревом на JavaScript</p>
+    </div>
+
+    <div class="section">
+      <h3>Условие задачи</h3>
+      <ul class="highlights">
+        <li>Найдите элемент по ID и измените его текст на «Привет, мир!».</li>
+        <li>Создайте новый элемент &lt;div&gt; с классом <mark>new-div</mark> и текстом «Я новый элемент», добавив его в конец &lt;body&gt;.</li>
+        <li>Удалите элемент с классом <mark>old-element</mark>.</li>
+        <li>Создайте абзац с текстом «Это изменяемый абзац.» и изменяйте его цвет и размер шрифта по клику.</li>
+      </ul>
+    </div>
+
+    <div class="section">
+      <h3>Результат выполнения</h3>
+      <div id="target-element" class="task1-target">Исходный текст элемента.</div>
+      <div class="old-element task1-old-element">Этот элемент будет удалён скриптом.</div>
+      <div id="task1-result"></div>
+      <button class="cta task1-create-button" data-action="create-task1-element">Создать новый элемент</button>
+    </div>
+  </section>
+
+  <section class="page" id="page-task2">
+    <div class="masthead">
+      <h1>Задание 2: Управление классами</h1>
+      <p>Переключение класса active и вывод списка классов</p>
+    </div>
+
+    <div class="task-box">
+      <div id="task2-target-element" class="demo-box card feature">Тестовый блок</div>
+
+      <div class="actions">
+        <button class="cta-btn" data-action="toggle-task2-class">Переключить класс active</button>
+      </div>
+
+      <div class="output-section">
+        <h3>Список классов элемента:</h3>
+        <p id="class-list-output">Загрузка...</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="page" id="page-task3">
+    <div class="masthead">
+      <h1>Задание 3: Генератор таблицы и статистика</h1>
+      <p>Создание таблицы заданного размера, изменение цвета ячеек и подсчет</p>
+    </div>
+
+    <div class="task-box">
+      <div class="table-controls">
+        <label>Строк: <input type="number" id="table-rows" min="1" max="20" value="3"></label>
+        <label>Столбцов: <input type="number" id="table-cols" min="1" max="20" value="3"></label>
+        <label>Цвет заливки: <input type="color" id="cell-color-picker" value="#3b82f6"></label>
+        <button class="cta-btn" data-action="generate-table">Создать таблицу</button>
+      </div>
+
+      <div id="table-container" class="table-container"></div>
+
+      <div class="output-section table-output">
+        <h3>Статистика цветов:</h3>
+        <p id="color-stats-output">Кликните по ячейкам таблицы, чтобы изменить их цвет.</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="page" id="page-todos">
+    <div class="masthead">
+      <h1>Менеджер задач</h1>
+      <p>Соберите дела в одном месте, отмечайте прогресс и быстро находите нужное.</p>
+      <p class="todo-api-note">Данные задач загружаются из DummyJSON. Добавление, изменение и удаление задач имитируются и сбрасываются после перезагрузки страницы.</p>
+    </div>
+    <div class="task-box todo-manager">
+      <div class="todo-toolbar">
+        <div class="todo-overview">
+          <p id="todo-count" class="todo-count" aria-live="polite">Загрузка задач…</p>
+          <p id="todo-summary" class="todo-summary">Считаем задачи…</p>
+          <div class="todo-progress" role="progressbar" aria-label="Выполненные задачи" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
+            <span id="todo-progress-fill"></span>
+          </div>
+        </div>
+        <div class="todo-toolbar-actions">
+          <button class="cta-btn todo-create-toggle" type="button" data-action="todo-create-toggle" aria-expanded="false" aria-controls="todo-create-form"><span aria-hidden="true">＋</span> Добавить задачу</button>
+          <button class="cta-btn todo-refresh-button" type="button" data-action="todos-refresh"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 7v5h-5"></path><path d="M4 17v-5h5"></path><path d="M5.6 9a7 7 0 0 1 11.6-2L20 12M4 12l2.8 5a7 7 0 0 0 11.6-2"></path></svg> Обновить</button>
+        </div>
+      </div>
+      <form id="todo-create-form" class="todo-form todo-create-form" data-todo-form="create" hidden>
+        <label>Название задачи
+          <input name="todo" type="text" required maxlength="200" placeholder="Например, проверить CRUD">
+        </label>
+        <label>ID пользователя
+          <input name="userId" type="number" min="1" step="1" value="1" required>
+        </label>
+        <label class="todo-checkbox-label">
+          <input name="completed" type="checkbox"> Выполнена
+        </label>
+        <button class="todo-open-button" type="submit">Добавить задачу</button>
+      </form>
+      <div class="todo-filters">
+        <div class="todo-filter-field todo-filter-search">
+          <label for="todo-search">Найти задачу</label>
+          <div class="todo-search-control">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"></circle><path d="m16 16 4 4"></path></svg>
+            <input id="todo-search" type="search" placeholder="Название, ID задачи или пользователя">
+            <button id="todo-search-clear" class="todo-search-clear" type="button" data-action="todo-search-clear" aria-label="Очистить поиск" title="Очистить поиск" hidden>×</button>
+          </div>
+        </div>
+        <div class="todo-filter-field">
+          <label for="todo-filter">Показать</label>
+          <select id="todo-filter">
+            <option value="all">Все задачи</option>
+            <option value="active">В работе</option>
+            <option value="completed">Выполненные</option>
+          </select>
+        </div>
+        <div id="todo-sort-field"></div>
+      </div>
+      <p id="todo-notice" class="todo-notice" role="status" aria-live="polite"></p>
+      <div id="todo-list" class="todo-list"></div>
+      <nav id="todo-pagination" class="todo-pagination" aria-label="Страницы задач" hidden>
+        <button class="todo-open-button" type="button" data-action="todo-page" data-direction="-1">Назад</button>
+        <span data-page-label aria-live="polite">Страница 1</span>
+        <button class="todo-open-button" type="button" data-action="todo-page" data-direction="1">Дальше</button>
+      </nav>
+    </div>
+  </section>
+
+  <section class="page" id="page-user">
+    <div class="masthead">
+      <a class="todo-open-button user-profile-back" href="#todos">← К менеджеру задач</a>
+      <h1 id="user-profile-title">Профиль пользователя</h1>
+      <p>Данные загружены из DummyJSON.</p>
+    </div>
+    <div id="user-profile-content" class="task-box user-profile-content" aria-live="polite"></div>
+  </section>
+
+  <dialog id="todo-detail-dialog" class="todo-detail-dialog" aria-labelledby="todo-detail-dialog-title">
+    <div class="todo-user-dialog-header">
+      <h2 id="todo-detail-dialog-title">Детали задачи</h2>
+      <button class="todo-user-dialog-close" type="button" data-action="todo-detail-close" aria-label="Закрыть окно">×</button>
+    </div>
+    <div id="todo-detail-dialog-content" class="todo-detail-dialog-content" aria-live="polite"></div>
+  </dialog>
+
+  <dialog id="todo-user-dialog" class="todo-user-dialog" aria-labelledby="todo-user-dialog-title">
+    <div class="todo-user-dialog-header">
+      <h2 id="todo-user-dialog-title">Данные пользователя</h2>
+      <button class="todo-user-dialog-close" type="button" data-action="todo-user-close" aria-label="Закрыть окно">×</button>
+    </div>
+    <div id="todo-user-dialog-content" class="todo-user-dialog-content" aria-live="polite"></div>
+  </dialog>
+
+  <section class="page" id="page-resume">
+    <div class="masthead">
+      <h1>Состав команды</h1>
+      <p>Четыре участника — один проект</p>
+    </div>
+
+    <div class="panel active" id="p1">
+      <div class="profile-head">
+        <div class="avatar-box"><svg viewBox="0 0 100 100"><use href="#avatar-p1"/></svg></div>
+        <div class="info">
+          <h2>Эгембердиев Ибрагим</h2>
+          <div class="role">Начинающий Java-разработчик</div>
+          <div class="meta"><div><strong>19</strong> лет</div></div>
+        </div>
+      </div>
+
+      <div class="section">
+        <h3>О себе</h3>
+        <p class="bio">Изучает Java и делает первые проекты, нацелен на рост в разработке. Собирает практический опыт и постепенно расширяет портфолио.</p>
+      </div>
+
+      <div class="section">
+        <h3>Направление</h3>
+        <div class="chips">
+          <span class="chip">Java</span>
+          <span class="chip">Backend</span>
+          <span class="chip">Учебные проекты</span>
+        </div>
+      </div>
+
+      <div class="section">
+        <h3>Ключевые моменты</h3>
+        <ul class="highlights">
+          <li>Изучает Java и основы бэкенд-разработки</li>
+          <li>Работает над первыми практическими проектами</li>
+          <li>Нацелен на постепенный рост и расширение портфолио</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="panel" id="p2">
+      <div class="profile-head">
+        <div class="avatar-box"><svg viewBox="0 0 100 100"><use href="#avatar-p2"/></svg></div>
+        <div class="info">
+          <h2>Алиби Тулеугалиев</h2>
+          <div class="role">Студент, спортсмен и организатор</div>
+          <div class="meta"><div><strong>3</strong> курс</div></div>
+        </div>
+      </div>
+
+      <div class="section">
+        <h3>О себе</h3>
+        <p class="bio">Бывший капитан областной сборной по волейболу, организатор турниров по армрестлингу и в прошлом участник школьных олимпиад. Амбициозен в учёбе и спорте, а главную ценность видит в том, чтобы быть хорошим сыном для своих родителей.</p>
+      </div>
+
+      <div class="section">
+        <h3>Направление</h3>
+        <div class="chips">
+          <span class="chip">Волейбол</span>
+          <span class="chip">Армрестлинг</span>
+          <span class="chip">Организация турниров</span>
+          <span class="chip">Олимпиады</span>
+        </div>
+      </div>
+
+      <div class="section">
+        <h3>Достижения и опыт</h3>
+        <ul class="highlights">
+          <li>Капитан областной сборной по волейболу</li>
+          <li>Организатор турниров по армрестлингу</li>
+          <li>Участник школьных олимпиад</li>
+          <li>Совмещает учёбу, спорт и организаторскую деятельность</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="panel" id="p3">
+      <div class="profile-head">
+        <div class="avatar-box"><svg viewBox="0 0 100 100"><use href="#avatar-p3"/></svg></div>
+        <div class="info">
+          <h2>Оралов Нурболат</h2>
+          <div class="role">Вычислительная техника и ПО</div>
+          <div class="meta"><div><strong>3</strong> курс, AIU</div></div>
+        </div>
+      </div>
+
+      <div class="section">
+        <h3>О себе</h3>
+        <p class="bio">Изучает вычислительную технику и программное обеспечение в Astana International University, развивает техническую базу для будущих проектов в IT.</p>
+      </div>
+
+      <div class="section">
+        <h3>Направление</h3>
+        <div class="chips">
+          <span class="chip">Вычислительная техника</span>
+          <span class="chip">Программное обеспечение</span>
+          <span class="chip">AIU</span>
+        </div>
+      </div>
+
+      <div class="section">
+        <h3>Ключевые моменты</h3>
+        <ul class="highlights">
+          <li>3 курс, Astana International University</li>
+          <li>Специальность — вычислительная техника и ПО</li>
+          <li>Развивает техническую базу для будущих IT-проектов</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="panel" id="p4">
+      <div class="profile-head">
+        <div class="avatar-box"><svg viewBox="0 0 100 100"><use href="#avatar-p4"/></svg></div>
+        <div class="info">
+          <h2>Полатов Алихан</h2>
+          <div class="role">Предприниматель</div>
+          <div class="meta"><div><strong>19</strong> лет</div></div>
+        </div>
+      </div>
+
+      <div class="section">
+        <h3>О себе</h3>
+        <p class="bio">Я развиваюсь в предпринимательстве и работаю над собственными проектами. Изучаю потребности аудитории, ищу перспективные идеи и проверяю их на практике, чтобы превращать удачные гипотезы в полезные решения.</p>
+      </div>
+
+      <div class="section">
+        <h3>Направление</h3>
+        <div class="chips">
+          <span class="chip">Предпринимательство</span>
+          <span class="chip">Поиск идей</span>
+          <span class="chip">Тестирование гипотез</span>
+          <span class="chip">Анализ аудитории</span>
+          <span class="chip">Развитие проектов</span>
+        </div>
+      </div>
+
+      <div class="section">
+        <h3>Ключевые моменты</h3>
+        <ul class="highlights">
+          <li>Развиваю предпринимательское мышление и навыки управления проектами</li>
+          <li>Ищу и тестирую идеи для собственных проектов</li>
+          <li>Изучаю интересы аудитории и собираю обратную связь</li>
+          <li>Улучшаю навыки планирования, презентации и работы с задачами</li>
+          <li>Работаю над запуском и развитием собственных инициатив</li>
+        </ul>
+      </div>
+
+      <div class="section">
+        <h3>Цели</h3>
+        <p class="bio">Хочу создавать проекты, которые решают реальные задачи людей, развивать их шаг за шагом и собирать вокруг них сильную команду.</p>
+      </div>
+    </div>
+  </section>
+</div>
+<script src="js/fake-api.js"></script>
+<script src="js/script.js"></script>
+</body>
+</html>

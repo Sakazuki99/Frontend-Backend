@@ -1,0 +1,166 @@
+/* Командный проект — стили. Светлая и тёмная темы через [data-theme]. */
+:root{--bg:#fff;--ink:#000;--ink-soft:#6b6b6b;--ink-faint:#9a9a9a;--line:#e5e5e5;--chip:#f4f4f4;--card:#fff;--accent:#3b82f6;--ok:#15803d;--err:#dc2626;--btn:#000;--btn-ink:#fff;color-scheme:light}
+[data-theme="dark"]{--bg:#0e0e10;--ink:#f5f5f5;--ink-soft:#a1a1a1;--ink-faint:#7a7a7a;--line:#2a2a2e;--chip:#1c1c20;--card:#16161a;--accent:#60a5fa;--ok:#4ade80;--err:#f87171;--btn:#f5f5f5;--btn-ink:#0e0e10;color-scheme:dark}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+body{margin:0;min-height:100vh;background:var(--bg);color:var(--ink);font:400 15px/1.5 'Inter',-apple-system,'Segoe UI',sans-serif}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+button,input,select{font:inherit;color:inherit}
+h1,h2,h3,p{margin-top:0}
+.wrap{max-width:900px;margin:0 auto;padding:40px 24px 80px}
+
+/* навигация */
+.navbar{display:flex;align-items:center;gap:4px;margin-bottom:48px;border-bottom:1px solid var(--line);overflow-x:auto}
+#member-tabs{display:flex;align-items:center;gap:4px}
+.navbar button{flex-shrink:0;padding:14px 18px;background:none;border:0;border-bottom:2px solid transparent;color:var(--ink-soft);font-weight:600;cursor:pointer;white-space:nowrap;transition:color .15s,border-color .15s}
+.navbar button:hover{color:var(--ink)}
+.navbar button.active{color:var(--ink);border-bottom-color:var(--ink)}
+.nav-divider{flex-shrink:0;align-self:stretch;width:1px;margin:10px 6px;background:var(--line)}
+
+/* страницы */
+.page{display:none}
+.page.active{display:block;animation:fade .2s ease}
+@keyframes fade{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
+.masthead{margin-bottom:32px}
+.masthead h1,.hero h1{margin-bottom:6px;font-size:32px;font-weight:800;letter-spacing:-.5px}
+.masthead p{margin-bottom:6px;color:var(--ink-soft)}
+.kicker,.label{margin-bottom:8px;color:var(--ink-faint);font-size:12px;font-weight:700;letter-spacing:.3px}
+.hero{margin-bottom:48px}
+.hero>p:not(.kicker){max-width:62ch;margin-bottom:24px;color:var(--ink-soft);line-height:1.7}
+.section{margin-bottom:22px;padding-top:22px;border-top:1px solid var(--line)}
+.section h3{margin-bottom:12px;color:var(--ink-faint);font-size:12px;font-weight:700;letter-spacing:.3px}
+mark{padding:0 4px;border-radius:4px;background:var(--chip);color:inherit}
+
+/* кнопки */
+.cta,.cta-btn,.todo-open-button{display:inline-flex;align-items:center;gap:8px;padding:10px 18px;border:1px solid var(--btn);border-radius:999px;background:var(--btn);color:var(--btn-ink);font-size:14px;font-weight:600;text-decoration:none;cursor:pointer;transition:opacity .15s}
+.cta svg{width:16px;height:16px}
+.cta-btn svg{width:16px;height:16px}
+:is(.cta,.cta-btn,.todo-open-button):hover{opacity:.85}
+:is(.cta,.cta-btn,.todo-open-button):disabled{opacity:.4;cursor:not-allowed}
+
+/* команда */
+.roster-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:16px}
+.roster-item{display:flex;flex-direction:column;align-items:center;gap:10px;padding:16px;border:1px solid var(--line);border-radius:16px;background:var(--card);cursor:pointer}
+.roster-item:hover{border-color:var(--ink)}
+.avatar,.avatar-box{overflow:hidden;border-radius:50%;background:#000;flex-shrink:0}
+.avatar{width:72px;height:72px}
+.avatar-box{width:120px;height:120px}
+.avatar svg,.avatar-box svg{display:block;width:100%;height:100%}
+.name{font-weight:600}
+.panel{display:none}
+.panel.active{display:block;animation:fade .2s ease}
+.profile-head{display:grid;grid-template-columns:120px 1fr;gap:32px;margin-bottom:28px}
+.info h2{margin-bottom:4px;font-size:24px;font-weight:800;letter-spacing:-.3px}
+.role{margin-bottom:18px;color:var(--ink-soft);font-weight:500}
+.meta{display:flex;gap:28px;color:var(--ink-soft);font-size:13px}
+.meta strong{color:var(--ink);font-size:18px}
+.bio{max-width:58ch;margin:0;line-height:1.7}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chip{padding:6px 14px;border-radius:999px;background:var(--chip);font-size:13px;font-weight:600}
+.highlights{display:grid;gap:10px;margin:0;padding:0;list-style:none}
+.highlights li{position:relative;padding-left:18px;line-height:1.55}
+.highlights li::before{content:"";position:absolute;left:0;top:8px;width:6px;height:6px;border-radius:50%;background:var(--ink)}
+
+/* задания 1–3 */
+.task-box{padding:24px;border:1px solid var(--line);border-radius:16px;background:var(--card)}
+.task1-target,.task1-old-element{margin-bottom:12px;padding:12px 16px;border-radius:8px;background:var(--chip)}
+.task1-create-button{margin-top:16px}
+.editable-paragraph{display:inline-block;margin:0 0 4px;cursor:pointer;transition:color .2s,font-size .2s}
+.editable-paragraph.is-changed{color:var(--accent);font-size:1.5rem}
+.new-div{max-width:900px;margin:0 auto 40px;padding:16px 24px;border:1px dashed var(--ink-faint);border-radius:8px}
+body:not([data-page="task1"]) .new-div{display:none}
+.demo-box{margin-bottom:16px;padding:20px;border:2px solid var(--line);border-radius:12px;transition:all .2s}
+.demo-box.active{border-color:var(--accent);background:color-mix(in srgb,var(--accent) 12%,transparent)}
+.output-section{margin-top:20px}
+.output-section h3{font-size:14px}
+.table-controls{display:flex;flex-wrap:wrap;align-items:center;gap:16px;margin-bottom:20px}
+.table-controls input[type=number]{width:72px;padding:6px 8px;border:1px solid var(--line);border-radius:8px;background:var(--bg)}
+.table-container{overflow-x:auto}
+.table-container table{border-collapse:collapse}
+.table-container td{width:48px;height:38px;border:1px solid var(--ink-faint);cursor:pointer}
+.color-stat{display:inline-flex;align-items:center;gap:6px}
+.color-stat__swatch{width:14px;height:14px;border:1px solid var(--line);border-radius:3px}
+
+/* менеджер задач */
+.todo-api-note{font-size:13px}
+.todo-toolbar{display:flex;flex-wrap:wrap;justify-content:space-between;gap:16px;margin-bottom:20px}
+.todo-overview{flex:1;min-width:220px}
+.todo-count{margin-bottom:2px;font-size:18px;font-weight:700}
+.todo-summary{margin-bottom:10px;color:var(--ink-soft);font-size:13px}
+.todo-progress{height:6px;overflow:hidden;border-radius:999px;background:var(--chip)}
+#todo-progress-fill{display:block;width:0;height:100%;background:var(--ok);transition:width .3s}
+.todo-toolbar-actions{display:flex;flex-wrap:wrap;align-items:flex-start;gap:8px}
+.todo-refresh-button svg{width:16px;height:16px}
+.todo-form{display:grid;gap:12px;margin-bottom:20px;padding:16px;border:1px solid var(--line);border-radius:12px}
+.todo-form label{display:grid;gap:4px;font-size:13px;color:var(--ink-soft)}
+.todo-form input:not([type=checkbox]),.todo-filters select,.todo-search-control input{padding:9px 12px;border:1px solid var(--line);border-radius:8px;background:var(--bg);color:var(--ink)}
+.todo-form .todo-checkbox-label{display:flex;align-items:center;gap:8px}
+.todo-filters{display:flex;flex-wrap:wrap;gap:16px;margin-bottom:16px}
+.todo-filter-field{display:grid;gap:4px;font-size:13px;color:var(--ink-soft)}
+.todo-filter-search{flex:1;min-width:220px}
+.todo-search-control{position:relative;display:flex;align-items:center}
+.todo-search-control svg{position:absolute;left:10px;width:16px;height:16px;color:var(--ink-faint);pointer-events:none}
+.todo-search-control input{width:100%;padding-left:34px;padding-right:34px}
+.todo-search-clear{position:absolute;right:6px;width:24px;height:24px;border:0;border-radius:50%;background:var(--chip);cursor:pointer}
+.todo-notice{min-height:1.5em;margin-bottom:12px;font-size:13px}
+.todo-notice.is-error{color:var(--err)}
+.todo-notice.is-success{color:var(--ok)}
+.todo-list{display:grid;gap:12px}
+.todo-card{display:grid;gap:10px;padding:16px;border:1px solid var(--line);border-radius:12px;background:var(--card)}
+.todo-card.is-completed .todo-card-title{color:var(--ink-faint);text-decoration:line-through}
+.task-card-heading-row{display:grid;grid-template-columns:auto 1fr auto;align-items:center;gap:12px}
+.todo-card-title{margin:0;font-size:15px;font-weight:600}
+.todo-checkbox-status{display:inline-flex;cursor:pointer}
+.todo-checkbox-status input{width:20px;height:20px;cursor:pointer}
+.todo-checkbox-status.is-pending{opacity:.5}
+.todo-meta{margin:0;color:var(--ink-faint);font-size:12px}
+.todo-actions,.todo-detail-actions{display:flex;gap:8px}
+.todo-open-button{padding:7px 14px;border-color:var(--line);background:transparent;color:var(--ink)}
+.todo-delete-button:hover{border-color:var(--err);color:var(--err)}
+.todo-assignee{display:inline-flex;align-items:center;gap:8px;max-width:180px;padding:2px;border:0;background:none;cursor:pointer}
+.todo-assignee-avatar{display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;border-radius:50%;background:var(--chip);object-fit:cover;font-size:11px;font-weight:700;flex-shrink:0}
+.todo-assignee-name{overflow:hidden;font-size:13px;text-overflow:ellipsis;white-space:nowrap}
+.todo-skeleton{height:110px;border-radius:12px;background:linear-gradient(90deg,var(--chip),var(--line),var(--chip));background-size:200% 100%;animation:shimmer 1.2s infinite}
+@keyframes shimmer{to{background-position:-200% 0}}
+.todo-empty-state{display:grid;justify-items:center;gap:8px;padding:48px 16px;text-align:center}
+.todo-empty-state h2{margin:0;font-size:18px}
+.todo-empty-state p{margin:0 0 8px;color:var(--ink-soft)}
+.todo-empty-icon{display:grid;place-items:center;width:48px;height:48px;border-radius:50%;background:var(--chip);font-size:20px}
+.todo-pagination{display:flex;align-items:center;justify-content:center;gap:16px;margin-top:20px}
+
+/* профиль пользователя и диалоги */
+.user-profile-back{margin-bottom:16px}
+.user-load-status,.user-tasks-empty{color:var(--ink-soft)}
+.user-load-error{color:var(--err)}
+.user-details{margin-bottom:24px}
+.user-details-identity{display:flex;align-items:center;gap:16px;margin-bottom:16px}
+.user-details-identity h2,.user-details-identity h3{margin:0}
+.user-details-avatar{width:72px;height:72px;border-radius:50%;background:var(--chip)}
+.user-details--compact .user-details-avatar{width:56px;height:56px}
+.user-details-username{margin:0;color:var(--ink-soft)}
+.user-details-list{display:grid;gap:10px;margin:0 0 16px}
+.user-details-list dt{color:var(--ink-faint);font-size:12px}
+.user-details-list dd{margin:0}
+.user-tasks-heading{display:flex;flex-wrap:wrap;justify-content:space-between;gap:12px;margin-bottom:16px}
+.user-tasks-heading h2{margin-bottom:2px;font-size:18px}
+.user-tasks-heading p{margin:0;color:var(--ink-soft);font-size:13px}
+dialog{width:min(560px,calc(100vw - 32px));max-height:85vh;padding:0;border:1px solid var(--line);border-radius:16px;background:var(--card);color:var(--ink)}
+dialog::backdrop{background:rgba(0,0,0,.5)}
+.todo-user-dialog{width:min(680px,calc(100vw - 32px))}
+.todo-user-dialog-header{position:sticky;top:0;display:flex;align-items:center;justify-content:space-between;padding:16px 20px;border-bottom:1px solid var(--line);background:var(--card)}
+.todo-user-dialog-header h2{margin:0;font-size:18px}
+.todo-user-dialog-close{width:32px;height:32px;border:0;border-radius:50%;background:var(--chip);font-size:18px;cursor:pointer}
+.todo-detail-dialog-content,.todo-user-dialog-content{padding:20px}
+.todo-detail-content{display:grid;gap:12px}
+.todo-detail-title{margin:0;font-size:18px}
+.todo-detail-status{margin:0;font-weight:600;color:var(--accent)}
+.todo-detail-status.is-completed{color:var(--ok)}
+
+@media (max-width:560px){
+  .wrap{padding:24px 16px 64px}
+  .profile-head{grid-template-columns:1fr}
+  .avatar-box{width:88px;height:88px}
+  .navbar button{padding:12px 14px;font-size:14px}
+  .masthead h1,.hero h1{font-size:26px}
+}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
