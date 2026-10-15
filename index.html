@@ -182,18 +182,28 @@
           <button class="cta-btn todo-refresh-button" type="button" data-action="todos-refresh"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 7v5h-5"></path><path d="M4 17v-5h5"></path><path d="M5.6 9a7 7 0 0 1 11.6-2L20 12M4 12l2.8 5a7 7 0 0 0 11.6-2"></path></svg> Обновить</button>
         </div>
       </div>
-      <form id="todo-create-form" class="todo-form todo-create-form" data-todo-form="create" hidden>
+      <dialog id="todo-create-dialog" class="todo-detail-dialog todo-create-dialog" aria-labelledby="todo-create-dialog-title">
+        <div class="todo-user-dialog-header">
+          <h2 id="todo-create-dialog-title">Добавить задачу</h2>
+          <button class="todo-user-dialog-close" type="button" data-action="todo-create-close" aria-label="Закрыть окно">×</button>
+        </div>
+        <form id="todo-create-form" class="todo-form todo-create-form todo-dialog-edit-form" data-todo-form="create">
         <label>Название задачи
           <input name="todo" type="text" required maxlength="200" placeholder="Например, проверить CRUD">
         </label>
-        <label>ID пользователя
-          <input name="userId" type="number" min="1" step="1" value="1" required>
+        <label>Пользователь
+          <select name="userId" required></select>
         </label>
         <label class="todo-checkbox-label">
           <input name="completed" type="checkbox"> Выполнена
         </label>
         <button class="todo-open-button" type="submit">Добавить задачу</button>
-      </form>
+        <div class="todo-detail-actions">
+          <button class="todo-open-button" type="submit">Добавить задачу</button>
+          <button class="todo-open-button" type="button" data-action="todo-create-close">Отмена</button>
+        </div>
+        </form>
+      </dialog>
       <div class="todo-filters">
         <div class="todo-filter-field todo-filter-search">
           <label for="todo-search">Найти задачу</label>
@@ -210,6 +220,10 @@
             <option value="active">В работе</option>
             <option value="completed">Выполненные</option>
           </select>
+        </div>
+        <div class="todo-filter-field">
+          <label for="todo-user-filter">Пользователь</label>
+          <select id="todo-user-filter"><option value="all">Все пользователи</option></select>
         </div>
         <div id="todo-sort-field"></div>
       </div>

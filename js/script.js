@@ -26,6 +26,7 @@
   
   const state = {
     todos: [],
+    todosLoaded: false,
     page: 1,
     sort: 'newest',
     loadVersion: 0,
@@ -52,7 +53,7 @@
       'member-tabs', 'task1-result', 'task2-target-element', 'class-list-output', 'table-rows', 'table-cols',
       'table-container', 'cell-color-picker', 'color-stats-output', 'theme-toggle-btn', 'todo-count', 'todo-summary',
       'todo-progress-fill', 'todo-list', 'todo-search', 'todo-search-clear', 'todo-filter', 'todo-sort-field',
-      'todo-pagination', 'todo-create-form', 'todo-notice', 'todo-detail-dialog', 'todo-detail-dialog-title',
+      'todo-pagination', 'todo-create-form', 'todo-create-dialog', 'todo-user-filter', 'todo-notice', 'todo-detail-dialog', 'todo-detail-dialog-title',
       'todo-detail-dialog-content', 'todo-user-dialog', 'todo-user-dialog-content', 'user-profile-content',
       'user-profile-title',
     ].forEach((id) => { el[id] = $(id); });
@@ -81,12 +82,14 @@
       state.searchTimer = setTimeout(() => goToFirstPage(), 160);
     });
     el['todo-filter']?.addEventListener('change', goToFirstPage);
+    el['todo-user-filter']?.addEventListener('change', goToFirstPage);
   }
 
   async function loadUserDirectory() {
     if (!window.fakeTodoApi) return;
     try {
       userDirectory = new Map((await window.fakeTodoApi.getUsers()).map((user) => [Number(user.id), user]));
+      populateUserSelectors();
       if (state.todos.length) renderTodos();
       refreshUserViews();
     } catch {
@@ -94,7 +97,15 @@
     }
   }
 
-  const loadUserTodos = (id) => state.todos.length
+  function populateUserSelectors() {
+    if (!userDirectory) return;
+    const users = [...userDirectory.values()].sort((a, b) => getUserName(a).localeCompare(getUserName(b), 'ru'));
+    if (el['todo-user-filter']) el['todo-user-filter'].replaceChildren(h('option', { value: 'all', textContent: 'Все пользователи' }), ...users.map((user) => h('option', { value: String(user.id), textContent: getUserName(user) })));
+    const assignee = el['todo-create-form']?.elements.namedItem('userId');
+    if (assignee) assignee.replaceChildren(...users.map((user) => h('option', { value: String(user.id), textContent: getUserName(user) })));
+  }
+
+  const loadUserTodos = (id) => state.todosLoaded
     ? Promise.resolve(state.todos.filter((todo) => Number(todo.userId) === id))
     : window.fakeTodoApi.getByUserId(id);
 
@@ -114,10 +125,19 @@
   function resetFilters() {
     el['todo-search'].value = '';
     el['todo-filter'].value = 'all';
+    if (el['todo-user-filter']) el['todo-user-filter'].value = 'all';
   }
 
   
   function handleChange(event) {
+    if (event.target.matches('select[data-action="user-task-filter"]')) {
+      const container = event.target.closest('#user-profile-content, #todo-user-dialog-content');
+      const list = container?.querySelector('.user-tasks-section .todo-list');
+      const todos = userViews.get(container)?.todos || [];
+      const filter = event.target.value;
+      if (list) renderTodoCards(list, sortTodos(todos.filter((todo) => filter === 'all' || (filter === 'active' ? !todo.completed : todo.completed))));
+      return;
+    }
     const sortSelect = event.target.closest('select[data-action="todo-sort"]');
     if (sortSelect) {
       state.sort = sortSelect.value;
@@ -144,6 +164,8 @@
     'generate-table': () => generateTable(),
     'todos-refresh': () => loadTodos(),
     'todo-create-toggle': () => toggleCreateTodoForm(),
+    'todo-create-close': () => setCreateFormOpen(false),
+    'todo-create-for-user': (c) => toggleCreateTodoForm(c.dataset.userId),
     'todo-open': (c) => openTodoDialog(c.dataset.id),
     'todo-edit': (c) => renderTodoEditDialog(c.dataset.id),
     'todo-edit-cancel': () => renderTodoDetails(state.activeDialogId),
@@ -303,8 +325,11 @@
       if (isProfile) el['user-profile-title'].textContent = getUserName(user);
       const todosOk = todosResult.status === 'fulfilled';
       view.todos = todosOk ? todosResult.value : [];
+      if (todosOk) {
+        state.todos = [...state.todos.filter((todo) => Number(todo.userId) !== id), ...view.todos];
+      }
       const details = createUserDetails(user, !isProfile);
-      const tasks = todosOk ? createUserTasksSection(view.todos) : createUserTasksError(id, todosResult.reason.message);
+      const tasks = todosOk ? createUserTasksSection(view.todos, id) : createUserTasksError(id, todosResult.reason.message);
 
       container.replaceChildren(...(isProfile ? [details, tasks] : [h('div', { className: 'user-modal' }, details, tasks)]));
       container.removeAttribute('aria-busy');
@@ -329,7 +354,7 @@
       if (!view || !section || !state.todos.length) return;
       const userId = Number(container.dataset.userId);
       view.todos = state.todos.filter((todo) => Number(todo.userId) === userId);
-      section.replaceWith(createUserTasksSection(view.todos));
+      section.replaceWith(createUserTasksSection(view.todos, userId));
     });
   }
 
@@ -365,7 +390,7 @@
     );
   }
 
-  function createUserTasksSection(todos) {
+  function createUserTasksSection(todos, userId) {
     const done = todos.filter((todo) => todo.completed).length;
     const section = h('section', { className: 'user-tasks-section' },
       h('div', { className: 'user-tasks-heading' },
@@ -373,7 +398,9 @@
           h('h2', { textContent: 'Задачи пользователя' }),
           h('p', { textContent: `Всего: ${todos.length} · В работе: ${todos.length - done} · Выполнено: ${done}` }),
         ),
+        button('Добавить задачу', 'todo-open-button user-task-add-button', { action: 'todo-create-for-user', userId: String(userId) }),
         createSortField(`user-task-sort-${++sortFieldSeq}`),
+        createTaskStatusField(`user-task-filter-${++sortFieldSeq}`),
       ),
     );
 
@@ -400,6 +427,16 @@
       sortOptions.map(([value, text]) => h('option', { value, textContent: text })));
     select.value = state.sort;
     return h('div', { className: 'todo-filter-field' }, h('label', { htmlFor: id, textContent: 'Сортировать' }), select);
+  }
+
+  function createTaskStatusField(id) {
+    return h('div', { className: 'todo-filter-field' },
+      h('label', { htmlFor: id, textContent: 'Фильтр' }),
+      h('select', { id, dataset: { action: 'user-task-filter' } },
+        h('option', { value: 'all', textContent: 'Все задачи' }),
+        h('option', { value: 'active', textContent: 'В работе' }),
+        h('option', { value: 'completed', textContent: 'Выполненные' })),
+    );
   }
 
   function sortTodos(todos, order = state.sort) {
@@ -533,6 +570,7 @@
       if (version !== state.loadVersion) return false;
 
       state.todos = todos;
+      state.todosLoaded = true;
       setTodoNotice('');
       try {
         renderTodos();
@@ -555,6 +593,7 @@
     const { todos } = state;
     const search = el['todo-search'].value.trim().toLocaleLowerCase();
     const filter = el['todo-filter'].value;
+    const userFilter = el['todo-user-filter']?.value || 'all';
     const completed = todos.filter((todo) => todo.completed).length;
     const completion = todos.length ? Math.round((completed / todos.length) * 100) : 0;
 
@@ -568,13 +607,13 @@
     const filtered = sortTodos(todos.filter((todo) => {
       const text = `${todo.todo} ${todo.userId} ${todo.id}`.toLocaleLowerCase();
       const matchesFilter = filter === 'all' || (filter === 'active' ? !todo.completed : todo.completed);
-      return text.includes(search) && matchesFilter;
+      return text.includes(search) && matchesFilter && (userFilter === 'all' || Number(todo.userId) === Number(userFilter));
     }));
     const pageCount = Math.max(1, Math.ceil(filtered.length / TODOS_PER_PAGE));
     state.page = Math.min(Math.max(state.page, 1), pageCount);
     const start = (state.page - 1) * TODOS_PER_PAGE;
 
-    el['todo-count'].textContent = search || filter !== 'all'
+    el['todo-count'].textContent = search || filter !== 'all' || userFilter !== 'all'
       ? `${filtered.length} из ${todos.length} задач`
       : `Всего задач: ${todos.length}`;
 
@@ -610,7 +649,6 @@
     if (!todo || !el['todo-detail-dialog']) return;
     state.activeDialogId = String(todo.id);
     renderTodoDetails(todo.id);
-    if (!el['todo-detail-dialog'].open) el['todo-detail-dialog'].showModal();
   }
 
   function renderTodoDetails(id) {
@@ -634,6 +672,7 @@
     const todo = findTodo(id);
     if (!todo || !el['todo-detail-dialog-content']) return;
     state.activeDialogId = String(todo.id);
+    if (!el['todo-detail-dialog'].open) el['todo-detail-dialog'].showModal();
     showDialogContent('Изменить задачу', createTodoEditForm(todo));
     el['todo-detail-dialog-content'].querySelector('[name="todo"]')?.focus();
   }
@@ -652,15 +691,20 @@
     );
   }
 
-  function toggleCreateTodoForm() {
+  function toggleCreateTodoForm(userId = '') {
     const form = el['todo-create-form'];
-    if (!form || !el.createToggle) return;
-    setCreateFormOpen(form.hidden);
-    if (!form.hidden) form.querySelector('[name="todo"]')?.focus();
+    if (!form || !el['todo-create-dialog']) return;
+    const userSelect = form.elements.namedItem('userId');
+    const userField = userSelect?.closest('label');
+    if (userField) userField.hidden = Boolean(userId);
+    if (userId && userSelect) userSelect.value = String(userId);
+    if (!el['todo-create-dialog'].open) setCreateFormOpen(true);
+    form.querySelector('[name="todo"]')?.focus();
   }
 
   function setCreateFormOpen(isOpen) {
-    el['todo-create-form'].hidden = !isOpen;
+    if (isOpen) el['todo-create-dialog']?.showModal();
+    else el['todo-create-dialog']?.close();
     el.createToggle.setAttribute('aria-expanded', String(isOpen));
     el.createToggle.textContent = isOpen ? 'Скрыть форму' : 'Добавить задачу';
   }
@@ -708,6 +752,7 @@
       resetFilters();
       state.todos = [created, ...state.todos.filter((todo) => todo.id !== created.id)];
       goToFirstPage();
+      refreshUserViews();
       setTodoNotice('Задача добавлена.', 'success');
     } catch (error) {
       setTodoNotice(error.message, 'error');

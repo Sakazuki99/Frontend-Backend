@@ -864,6 +864,8 @@ a:focus-visible,
   background: var(--field-bg);
 }
 
+.todo-create-form label[hidden]{ display: none !important; }
+
 .todo-create-form label:first-child{ flex: 1 1 260px; }
 .todo-create-form label:nth-child(2){ flex: 0 1 190px; }
 
@@ -880,7 +882,7 @@ a:focus-visible,
 
 .todo-filters{
   display: grid;
-  grid-template-columns: minmax(0, 1fr) repeat(2, minmax(150px, 190px));
+  grid-template-columns: minmax(0, 1fr) repeat(3, minmax(140px, 190px));
   align-items: end;
   gap: 12px;
   padding: 14px;
@@ -1509,9 +1511,9 @@ a:focus-visible,
 }
 
 .user-tasks-heading{
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  align-items: end;
   gap: 16px;
   margin-bottom: 16px;
 }
@@ -1519,12 +1521,20 @@ a:focus-visible,
 .user-tasks-heading-copy{
   display: grid;
   min-width: 0;
+  grid-column: 1 / -1;
   gap: 4px;
 }
 
 .user-tasks-heading > .todo-filter-field{
   width: min(200px, 100%);
   flex: 0 0 auto;
+}
+
+.user-task-add-button{
+  width: 100%;
+  min-height: 43px;
+  margin: 0;
+  text-align: center;
 }
 
 .user-tasks-heading h2,
@@ -1724,13 +1734,22 @@ a:focus-visible,
   }
 
   .user-tasks-heading{
-    align-items: flex-start;
-    flex-direction: column;
+    grid-template-columns: 1fr;
+    align-items: stretch;
     gap: 6px;
   }
 
   .user-tasks-heading > .todo-filter-field{ width: 100%; }
 }
+
+.todo-create-dialog .todo-create-form{
+  margin: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+}
+
+.todo-create-dialog .todo-create-form > button[type="submit"]{ display: none; }
 
 @media (prefers-reduced-motion: reduce){
   *,
