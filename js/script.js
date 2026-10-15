@@ -649,6 +649,7 @@
     if (!todo || !el['todo-detail-dialog']) return;
     state.activeDialogId = String(todo.id);
     renderTodoDetails(todo.id);
+    if (!el['todo-detail-dialog'].open) el['todo-detail-dialog'].showModal();
   }
 
   function renderTodoDetails(id) {
