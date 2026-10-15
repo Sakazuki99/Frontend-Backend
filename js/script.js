@@ -150,7 +150,7 @@
     const { page, member, action } = control.dataset;
 
     if (page) {
-      if (location.hash.startsWith('#user/')) history.replaceState(null, '', location.pathname + location.search);
+      if (location.hash) history.replaceState(null, '', location.pathname + location.search);
       showPage(page);
       if (page === 'resume' && !document.querySelector('.panel.active')) showMember('p1');
     } else if (member) {
@@ -340,7 +340,7 @@
       section.append(h('p', { className: 'user-tasks-empty', textContent: 'У этого пользователя пока нет задач.' }));
     } else {
       const list = h('div', { className: 'todo-list' });
-      renderTodoCards(list, todos);
+      renderTodoCards(list, sortTodos(todos));
       section.append(list);
     }
     return section;
@@ -373,12 +373,12 @@
     });
   }
 
-  const renderTodoCards = (list, todos) => list.replaceChildren(...sortTodos(todos).map((todo) => createTodoCard(todo)));
+  const renderTodoCards = (list, todos) => list.replaceChildren(...todos.map((todo) => createTodoCard(todo)));
 
   function renderUserTaskCards() {
     [el['user-profile-content'], el['todo-user-dialog-content']].forEach((container) => {
       const list = container?.querySelector('.user-tasks-section .todo-list');
-      if (list) renderTodoCards(list, userViews.get(container)?.todos || []);
+      if (list) renderTodoCards(list, sortTodos(userViews.get(container)?.todos || []));
     });
   }
 
@@ -622,9 +622,6 @@
     completed: data.get('completed') === 'on',
   });
 
-  const reportListResult = (listUpdated, success, failure) =>
-    setTodoNotice(listUpdated ? success : failure, listUpdated ? 'success' : 'error');
-
   async function handleTodoSubmit(event) {
     const form = event.target.closest('form[data-todo-form]');
     if (!form) return;
@@ -651,16 +648,15 @@
         resetFilters();
         state.todos = [created, ...state.todos.filter((todo) => todo.id !== created.id)];
         goToFirstPage();
-        reportListResult(await loadTodos(), 'Задача добавлена.', 'Задача создана, но список не обновился. Попробуйте обновить его.');
+        setTodoNotice('Задача добавлена.', 'success');
       } else {
         pendingId = String(form.dataset.id);
         pendingIds.add(pendingId);
         const updated = await window.fakeTodoApi.update(pendingId, payload);
         replaceTodo(updated);
         renderTodos();
-        const listUpdated = await loadTodos();
         renderTodoDetails(updated.id);
-        reportListResult(listUpdated, 'Изменения сохранены.', 'Изменения сохранены, но список не обновился. Попробуйте обновить его.');
+        setTodoNotice('Изменения сохранены.', 'success');
       }
     } catch (error) {
       setTodoNotice(error.message, 'error');
@@ -705,7 +701,6 @@
 
     return runPendingAction(id, async () => {
       replaceTodo(await window.fakeTodoApi.update(id, { completed: checkbox.checked }));
-      await loadTodos();
     }, 'Не удалось обновить задачу');
   }
 
@@ -716,8 +711,6 @@
     return runPendingAction(id, async () => {
       await window.fakeTodoApi.delete(id);
       state.todos = state.todos.filter((todo) => todo.id !== Number(id));
-      renderTodos();
-      await loadTodos();
     }, 'Не удалось удалить задачу');
   }
 
@@ -807,17 +800,27 @@
 
   
   function initTheme() {
-    setTheme(localStorage.getItem('theme') === 'dark' ? 'dark' : 'light');
+    let theme = 'light';
+    try {
+      theme = localStorage.getItem('theme') === 'dark' ? 'dark' : 'light';
+    } catch {
+      // Хранилище может быть запрещено настройками браузера.
+    }
+    setTheme(theme);
   }
 
   function setTheme(theme) {
     const isDark = theme === 'dark';
     document.documentElement.dataset.theme = theme;
-    localStorage.setItem('theme', theme);
     const themeButton = el['theme-toggle-btn'];
     if (themeButton) {
       themeButton.textContent = isDark ? '☀️ Светлая' : '🌙 Тёмная';
       themeButton.setAttribute('aria-pressed', String(isDark));
+    }
+    try {
+      localStorage.setItem('theme', theme);
+    } catch {
+      // Переключение темы работает и без сохранения настройки.
     }
   }
 
