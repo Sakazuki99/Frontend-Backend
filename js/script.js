@@ -34,7 +34,9 @@
   };
   const userCache = new Map();
   const userViews = new WeakMap(); 
-  const pendingIds = new Set();
+  const saveQueue = new Map(); // id задачи -> Promise: изменения одной задачи уходят на сервер строго по очереди
+  let userDirectory = null; // id -> {firstName, lastName, image}; грузится одним запросом
+  let sortFieldSeq = 0;
   const el = {};
 
   const sortOptions = [
@@ -63,9 +65,11 @@
     initTask1();
     initTask3();
     updateTask2ClassList();
+    loadUserDirectory();
     loadTodos();
 
     document.addEventListener('click', handleClick);
+    document.addEventListener('keydown', handleKeydown);
     document.addEventListener('change', handleChange);
     document.addEventListener('submit', handleTodoSubmit);
     window.addEventListener('hashchange', handleRoute);
@@ -76,6 +80,29 @@
       state.searchTimer = setTimeout(() => goToFirstPage(), 160);
     });
     el['todo-filter']?.addEventListener('change', goToFirstPage);
+  }
+
+  async function loadUserDirectory() {
+    if (!window.fakeTodoApi) return;
+    try {
+      userDirectory = new Map((await window.fakeTodoApi.getUsers()).map((user) => [Number(user.id), user]));
+      if (state.todos.length) renderTodos();
+      refreshUserViews();
+    } catch {
+      // Без справочника показываем «Пользователь #ID» — не критично.
+    }
+  }
+
+  const loadUserTodos = (id) => state.todos.length
+    ? Promise.resolve(state.todos.filter((todo) => Number(todo.userId) === id))
+    : window.fakeTodoApi.getByUserId(id);
+
+  function handleKeydown(event) {
+    if (event.key !== 'Enter' && event.key !== ' ') return;
+    const node = event.target.closest?.('.editable-paragraph, td[data-color]');
+    if (!node) return;
+    event.preventDefault();
+    node.click();
   }
 
   function goToFirstPage() {
@@ -99,14 +126,20 @@
       return;
     }
     const checkbox = event.target.closest('input[data-action="todo-toggle"]');
-    if (checkbox) toggleTodo(checkbox.dataset.id, checkbox);
+    if (checkbox) {
+      const { id } = checkbox.dataset;
+      const scopeId = checkbox.closest('#todo-list, #user-profile-content, #todo-user-dialog-content')?.id;
+      toggleTodo(id, checkbox.checked);
+      // Карточки перерисованы — возвращаем фокус клавиатурным пользователям.
+      if (scopeId) document.querySelector(`#${scopeId} [data-action="todo-toggle"][data-id="${id}"]`)?.focus();
+    }
   }
 
   const actions = {
     'open-member': (c) => showMember(c.dataset.member || 'p1'),
-    'create-task1-element': () => createTask1Element(),
+    'create-task1-element': (c) => createTask1Element(c),
     'toggle-task2-class': () => { el['task2-target-element']?.classList.toggle('active'); updateTask2ClassList(); },
-    'toggle-theme': () => setTheme(document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark'),
+    'toggle-theme': () => setTheme(document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark', true),
     'generate-table': () => generateTable(),
     'todos-refresh': () => loadTodos(),
     'todo-create-toggle': () => toggleCreateTodoForm(),
@@ -114,7 +147,7 @@
     'todo-edit': (c) => renderTodoEditDialog(c.dataset.id),
     'todo-edit-cancel': () => renderTodoDetails(state.activeDialogId),
     'todo-detail-close': () => el['todo-detail-dialog']?.close(),
-    'todo-delete': (c) => deleteTodo(c.dataset.id, c),
+    'todo-delete': (c) => deleteTodo(c.dataset.id),
     'todo-page': (c) => { state.page += Number(c.dataset.direction); renderTodos(); },
     'todo-search-clear': () => { el['todo-search'].value = ''; goToFirstPage(); el['todo-search'].focus(); },
     'todo-clear-filters': () => { resetFilters(); goToFirstPage(); el['todo-search'].focus(); },
@@ -134,8 +167,11 @@
       return;
     }
 
-    if (target === el['todo-user-dialog'] || target === el['todo-detail-dialog']) {
-      target.close();
+    if (target instanceof HTMLDialogElement) {
+      // Клик по ::backdrop приходит с target = dialog; клики по отступам самого окна игнорируем.
+      const { left, right, top, bottom } = target.getBoundingClientRect();
+      const inside = event.clientX >= left && event.clientX <= right && event.clientY >= top && event.clientY <= bottom;
+      if (!inside) target.close();
       return;
     }
 
@@ -152,7 +188,7 @@
     if (page) {
       if (location.hash) history.replaceState(null, '', location.pathname + location.search);
       showPage(page);
-      if (page === 'resume' && !document.querySelector('.panel.active')) showMember('p1');
+      if (page === 'resume') showMember(document.querySelector('.panel.active')?.id || 'p1');
     } else if (member) {
       showMember(member);
     } else {
@@ -164,6 +200,7 @@
   function showPage(pageId) {
     const page = $(`page-${pageId}`);
     if (!page) return;
+    document.body.dataset.page = pageId;
     document.querySelectorAll('.page').forEach((item) => item.classList.toggle('active', item === page));
     document.querySelectorAll('#navbar > button[data-page]').forEach((btn) => {
       const isActive = btn.dataset.page === pageId;
@@ -255,7 +292,7 @@
       if (retry) userCache.delete(id);
       const [userResult, todosResult] = await Promise.allSettled([
         getUserData(id),
-        window.fakeTodoApi.getByUserId(id),
+        loadUserTodos(id),
       ]);
       if (isStale()) return;
       if (userResult.status === 'rejected') throw userResult.reason;
@@ -283,13 +320,16 @@
   }
 
   
+  // Обновляем уже открытые профили из локального состояния — без повторных запросов и «мигания».
   function refreshUserViews() {
-    const route = location.hash.match(USER_ROUTE);
-    const dialogContent = el['todo-user-dialog-content'];
-    return Promise.all([
-      route && renderUserView(el['user-profile-content'], route[1]),
-      el['todo-user-dialog']?.open && renderUserView(dialogContent, dialogContent.dataset.userId),
-    ]);
+    [el['user-profile-content'], el['todo-user-dialog-content']].forEach((container) => {
+      const view = userViews.get(container);
+      const section = container?.querySelector('.user-tasks-section:not(.user-tasks-error)');
+      if (!view || !section || !state.todos.length) return;
+      const userId = Number(container.dataset.userId);
+      view.todos = state.todos.filter((todo) => Number(todo.userId) === userId);
+      section.replaceWith(createUserTasksSection(view.todos));
+    });
   }
 
   function createUserDetails(user, compact) {
@@ -332,7 +372,7 @@
           h('h2', { textContent: 'Задачи пользователя' }),
           h('p', { textContent: `Всего: ${todos.length} · В работе: ${todos.length - done} · Выполнено: ${done}` }),
         ),
-        createSortField('user-task-sort'),
+        createSortField(`user-task-sort-${++sortFieldSeq}`),
       ),
     );
 
@@ -384,12 +424,10 @@
 
   function createTodoCard(todo) {
     const id = String(todo.id);
-    const pending = pendingIds.has(id);
     const checkbox = h('input', {
       type: 'checkbox',
       dataset: { action: 'todo-toggle', id },
       checked: todo.completed,
-      disabled: pending,
       attrs: { 'aria-label': todo.completed ? 'Снять отметку выполнения задачи' : 'Отметить задачу выполненной' },
     });
 
@@ -404,9 +442,8 @@
       ),
       h('p', { className: 'todo-meta', textContent: `Задача #${todo.id}` }),
       h('div', { className: 'todo-actions' },
-        button('Подробнее', 'todo-open-button', { action: 'todo-open', id }, { disabled: pending }),
+        button('Подробнее', 'todo-open-button', { action: 'todo-open', id }),
         button('×', 'todo-open-button todo-delete-button', { action: 'todo-delete', id }, {
-          disabled: pending,
           title: 'Удалить задачу',
           attrs: { 'aria-label': 'Удалить задачу' },
         }),
@@ -416,18 +453,13 @@
 
   function createTodoAssignee(todo) {
     const assignee = button('', 'todo-assignee', { action: 'todo-user', userId: String(todo.userId) });
-    renderTodoAssignee(assignee, null, todo.userId);
-    getUserData(todo.userId)
-      .catch(() => null)
-      .then((user) => {
-        if (assignee.isConnected) renderTodoAssignee(assignee, user, todo.userId);
-      });
+    renderTodoAssignee(assignee, userDirectory?.get(Number(todo.userId)) ?? null, todo.userId);
     return assignee;
   }
 
   function renderTodoAssignee(node, user, userId) {
     const name = user ? getUserName(user) : `Пользователь #${userId}`;
-    const initials = name.split(/\s+/).filter(Boolean).slice(0, 2).map((part) => part[0]).join('').toLocaleUpperCase();
+    const initials = user ? name.split(/\s+/).filter(Boolean).slice(0, 2).map((part) => part[0]).join('').toLocaleUpperCase() : '#';
     node.replaceChildren(
       user?.image
         ? avatarImage('todo-assignee-avatar', user.image)
@@ -469,7 +501,12 @@
   }
 
   async function loadTodos() {
-    if (!el['todo-list'] || !window.fakeTodoApi) return false;
+    if (!el['todo-list']) return false;
+    if (!window.fakeTodoApi) {
+      el['todo-count'].textContent = 'Не удалось загрузить модуль задач';
+      el['todo-list'].replaceChildren(createLoadError());
+      return false;
+    }
 
     const version = ++state.loadVersion;
     setLoading(true);
@@ -628,36 +665,37 @@
     event.preventDefault();
     if (form.dataset.busy === 'true') return;
 
-    const isCreate = form.dataset.todoForm === 'create';
+    const payload = todoPayload(new FormData(form));
+
+    // Редактирование — оптимистично: окно сразу показывает новые данные, сервер получает запрос в фоне.
+    if (form.dataset.todoForm !== 'create') {
+      payload.todo = payload.todo.trim();
+      if (!payload.todo) {
+        setTodoNotice('Название задачи не может быть пустым.', 'error');
+        return;
+      }
+      saveTodoChange(form.dataset.id, payload, 'Не удалось сохранить изменения', 'Изменения сохранены.');
+      renderTodoDetails(Number(form.dataset.id));
+      return;
+    }
+
+    // Создание ждёт ответ сервера: id новой задачи выдаёт API.
     const submit = form.querySelector('[type="submit"]');
     const originalLabel = submit?.textContent;
     form.dataset.busy = 'true';
     form.setAttribute('aria-busy', 'true');
     if (submit) {
       submit.disabled = true;
-      submit.textContent = isCreate ? 'Добавляем…' : 'Сохраняем…';
+      submit.textContent = 'Добавляем…';
     }
-
-    const payload = todoPayload(new FormData(form));
-    let pendingId = null;
     try {
-      if (isCreate) {
-        const created = await window.fakeTodoApi.create(payload);
-        form.reset();
-        setCreateFormOpen(false);
-        resetFilters();
-        state.todos = [created, ...state.todos.filter((todo) => todo.id !== created.id)];
-        goToFirstPage();
-        setTodoNotice('Задача добавлена.', 'success');
-      } else {
-        pendingId = String(form.dataset.id);
-        pendingIds.add(pendingId);
-        const updated = await window.fakeTodoApi.update(pendingId, payload);
-        replaceTodo(updated);
-        renderTodos();
-        renderTodoDetails(updated.id);
-        setTodoNotice('Изменения сохранены.', 'success');
-      }
+      const created = await window.fakeTodoApi.create(payload);
+      form.reset();
+      setCreateFormOpen(false);
+      resetFilters();
+      state.todos = [created, ...state.todos.filter((todo) => todo.id !== created.id)];
+      goToFirstPage();
+      setTodoNotice('Задача добавлена.', 'success');
     } catch (error) {
       setTodoNotice(error.message, 'error');
     } finally {
@@ -667,54 +705,74 @@
         submit.disabled = false;
         submit.textContent = originalLabel;
       }
-      if (pendingId) {
-        pendingIds.delete(pendingId);
-        renderTodos();
-        await refreshUserViews();
+    }
+  }
+
+  // ---- Оптимистичные изменения -------------------------------------------------------------
+  // Сначала меняем локальное состояние и интерфейс, затем отправляем запрос.
+  // Запросы по одной задаче идут по очереди; при ошибке изменение откатывается.
+  function enqueueSave(todoId, work) {
+    const task = (saveQueue.get(todoId) ?? Promise.resolve()).then(work); // work сам ловит свои ошибки
+    saveQueue.set(todoId, task);
+    task.then(() => { if (saveQueue.get(todoId) === task) saveQueue.delete(todoId); });
+    return task;
+  }
+
+  function refreshTodoViews(todoId) {
+    renderTodos();
+    refreshUserViews();
+    const dialog = el['todo-detail-dialog'];
+    // Не выкидываем пользователя из формы редактирования — перерисовываем только режим просмотра.
+    if (dialog?.open && state.activeDialogId === String(todoId) && !dialog.querySelector('form')) renderTodoDetails(todoId);
+  }
+
+  function saveTodoChange(id, changes, errorPrefix, successMessage = '') {
+    const todoId = Number(id);
+    const previous = findTodo(todoId);
+    if (!previous) return Promise.resolve();
+
+    replaceTodo({ ...previous, ...changes });
+    refreshTodoViews(todoId);
+
+    return enqueueSave(todoId, async () => {
+      try {
+        await window.fakeTodoApi.update(todoId, changes);
+        if (successMessage) setTodoNotice(successMessage, 'success');
+      } catch (error) {
+        const current = findTodo(todoId);
+        if (current) {
+          // Откатываем только те поля, которые пользователь не успел изменить повторно.
+          const reverted = { ...current };
+          Object.keys(changes).forEach((key) => { if (current[key] === changes[key]) reverted[key] = previous[key]; });
+          replaceTodo(reverted);
+          refreshTodoViews(todoId);
+        }
+        setTodoNotice(`${errorPrefix}: ${error.message}`, 'error');
       }
-    }
+    });
   }
 
-  
-  async function runPendingAction(id, work, errorPrefix) {
-    const key = String(id);
-    if (pendingIds.has(key) || !findTodo(id)) return;
-    pendingIds.add(key);
-    try {
-      await work();
-    } catch (error) {
-      setTodoNotice(`${errorPrefix}: ${error.message}`, 'error');
-    } finally {
-      pendingIds.delete(key);
-      renderTodos();
-      await refreshUserViews();
-    }
+  const toggleTodo = (id, completed) => saveTodoChange(id, { completed }, 'Не удалось обновить задачу');
+
+  function deleteTodo(id) {
+    const todoId = Number(id);
+    const previous = findTodo(todoId);
+    if (!previous || !window.confirm(`Удалить задачу #${todoId}?`)) return;
+
+    state.todos = state.todos.filter((todo) => todo.id !== todoId);
+    refreshTodoViews(todoId);
+
+    return enqueueSave(todoId, async () => {
+      try {
+        await window.fakeTodoApi.delete(todoId);
+      } catch (error) {
+        state.todos = [...state.todos, previous];
+        refreshTodoViews(todoId);
+        setTodoNotice(`Не удалось удалить задачу: ${error.message}`, 'error');
+      }
+    });
   }
 
-  function toggleTodo(id, checkbox) {
-    const key = String(id);
-    if (pendingIds.has(key) || !findTodo(id)) return;
-    checkbox.disabled = true;
-    checkbox.setAttribute('aria-busy', 'true');
-    checkbox.closest('.todo-checkbox-status')?.classList.add('is-pending');
-    checkbox.setAttribute('aria-label', checkbox.checked ? 'Снять отметку выполнения задачи' : 'Отметить задачу выполненной');
-
-    return runPendingAction(id, async () => {
-      replaceTodo(await window.fakeTodoApi.update(id, { completed: checkbox.checked }));
-    }, 'Не удалось обновить задачу');
-  }
-
-  function deleteTodo(id, deleteButton) {
-    if (pendingIds.has(String(id)) || !findTodo(id)) return;
-    deleteButton.disabled = true;
-
-    return runPendingAction(id, async () => {
-      await window.fakeTodoApi.delete(id);
-      state.todos = state.todos.filter((todo) => todo.id !== Number(id));
-    }, 'Не удалось удалить задачу');
-  }
-
-  
   function initTask1() {
     const target = $('target-element');
     if (target) target.textContent = 'Привет, мир!';
@@ -722,12 +780,12 @@
 
     const result = el['task1-result'];
     if (!result || result.querySelector('.editable-paragraph')) return;
-    result.append(h('p', { className: 'editable-paragraph', textContent: 'Это изменяемый абзац.' }));
+    result.append(h('p', { className: 'editable-paragraph', textContent: 'Это изменяемый абзац.', tabIndex: 0, attrs: { role: 'button' } }));
   }
 
-  function createTask1Element() {
-    if (document.querySelector('.new-div')) return;
-    document.body.append(h('div', { className: 'new-div', textContent: 'Я новый элемент' }));
+  function createTask1Element(trigger) {
+    if (!document.querySelector('.new-div')) document.body.append(h('div', { className: 'new-div', textContent: 'Я новый элемент' }));
+    if (trigger) trigger.disabled = true; // элемент создаётся один раз
   }
 
   
@@ -770,6 +828,7 @@
     container.replaceChildren(h('table', {}, h('tbody', {},
       Array.from({ length: rows }, (_, r) => h('tr', {},
         Array.from({ length: cols }, (_, c) => h('td', {
+          tabIndex: 0,
           dataset: { color: '' },
           attrs: { 'aria-label': `Ячейка ${r + 1}, ${c + 1}` },
         })))))));
@@ -800,23 +859,22 @@
 
   
   function initTheme() {
-    let theme = 'light';
+    let theme = matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
     try {
-      theme = localStorage.getItem('theme') === 'dark' ? 'dark' : 'light';
+      const saved = localStorage.getItem('theme');
+      if (saved === 'dark' || saved === 'light') theme = saved;
     } catch {
       // Хранилище может быть запрещено настройками браузера.
     }
     setTheme(theme);
   }
 
-  function setTheme(theme) {
-    const isDark = theme === 'dark';
+  // Сохраняем тему только после явного выбора пользователя, иначе системная тема никогда не применится.
+  function setTheme(theme, persist = false) {
     document.documentElement.dataset.theme = theme;
     const themeButton = el['theme-toggle-btn'];
-    if (themeButton) {
-      themeButton.textContent = isDark ? '☀️ Светлая' : '🌙 Тёмная';
-      themeButton.setAttribute('aria-pressed', String(isDark));
-    }
+    if (themeButton) themeButton.textContent = theme === 'dark' ? '☀️ Светлая' : '🌙 Тёмная';
+    if (!persist) return;
     try {
       localStorage.setItem('theme', theme);
     } catch {
@@ -824,5 +882,6 @@
     }
   }
 
-  document.addEventListener('DOMContentLoaded', initialize, { once: true });
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', initialize, { once: true });
+  else initialize();
 })();
