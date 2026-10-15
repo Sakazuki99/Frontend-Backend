@@ -3,7 +3,7 @@
   const TODOS_PER_PAGE = 12;
   const USER_ROUTE = /^#user\/(\d+)$/;
 
-  
+  // Создание DOM-элементов
   function h(tag, props = {}, ...children) {
     const { className, dataset, attrs, ...rest } = props;
     const node = document.createElement(tag);
@@ -23,7 +23,6 @@
 
   const avatarImage = (className, src) => h('img', { className, src, alt: '', loading: 'lazy' });
 
-  
   const state = {
     todos: [],
     todosLoaded: false,
@@ -34,9 +33,9 @@
     activeDialogId: null,
   };
   const userCache = new Map();
-  const userViews = new WeakMap(); 
-  const saveQueue = new Map(); 
-  let userDirectory = null; 
+  const userViews = new WeakMap();
+  const saveQueue = new Map();
+  let userDirectory = null;
   let sortFieldSeq = 0;
   const el = {};
   const setText = (node, text) => { if (node) node.textContent = text; };
@@ -146,7 +145,6 @@
     if (el['todo-user-filter']) el['todo-user-filter'].value = 'all';
   }
 
-  
   function handleChange(event) {
     if (event.target.matches('select[data-action="user-task-filter"]')) {
       const container = event.target.closest('#user-profile-content, #todo-user-dialog-content');
@@ -169,7 +167,7 @@
       const { id } = checkbox.dataset;
       const scopeId = checkbox.closest('#todo-list, #user-profile-content, #todo-user-dialog-content')?.id;
       toggleTodo(id, checkbox.checked);
-      
+
       if (scopeId) document.querySelector(`#${scopeId} [data-action="todo-toggle"][data-id="${id}"]`)?.focus();
     }
   }
@@ -208,13 +206,9 @@
       return;
     }
 
-    if (target instanceof HTMLDialogElement) {
-      
-      const { left, right, top, bottom } = target.getBoundingClientRect();
-      const inside = event.clientX >= left && event.clientX <= right && event.clientY >= top && event.clientY <= bottom;
-      if (!inside) target.close();
-      return;
-    }
+    // Окна (dialog) никогда не закрываются кликом по фону или внутри окна.
+    // Закрыть можно только кнопками «×» / «Отмена» (или клавишей Esc).
+    if (target instanceof HTMLDialogElement) return;
 
     const paragraph = target.closest('.editable-paragraph');
     if (paragraph) {
@@ -222,7 +216,9 @@
       return;
     }
 
-    const control = target.closest('[data-page], [data-member], [data-action]');
+    // Важно: только кнопки навигации. У <body> тоже есть data-page (его ставит showPage),
+    // и из-за этого любой клик по подписи/тексту вызывал showPage() и закрывал окна.
+    const control = target.closest('button[data-page], [data-member], [data-action]');
     if (!control) return;
     const { page, member, action } = control.dataset;
 
@@ -237,7 +233,6 @@
     }
   }
 
-  
   function showPage(pageId) {
     const page = $(`page-${pageId}`);
     if (!page) return;
@@ -279,7 +274,6 @@
     }
   }
 
-  
   const getUserName = (user) =>
     [user.firstName, user.lastName].filter(Boolean).join(' ') || `Пользователь #${user.id}`;
 
@@ -317,7 +311,6 @@
     container.removeAttribute('aria-busy');
   }
 
-  
   async function renderUserView(container, userId, retry = false) {
     const id = Number(userId);
     if (!container || !isValidId(id)) return;
@@ -366,8 +359,6 @@
     return renderUserView(el['todo-user-dialog-content'], userId);
   }
 
-  
-  
   function refreshUserViews() {
     [el['user-profile-content'], el['todo-user-dialog-content']].forEach((container) => {
       const view = userViews.get(container);
@@ -442,7 +433,6 @@
       retryButton('user-retry', userId, 'Повторить загрузку'),
     );
 
-  
   function createSortField(id) {
     const select = h('select', { id, dataset: { action: 'todo-sort' } },
       sortOptions.map(([value, text]) => h('option', { value, textContent: text })));
@@ -550,7 +540,6 @@
     );
   }
 
-  
   function setLoading(isLoading) {
     const setBusy = (node) => (isLoading ? node.setAttribute('aria-busy', 'true') : node.removeAttribute('aria-busy'));
     setBusy(el['todo-list']);
@@ -597,7 +586,6 @@
       try {
         renderTodos();
       } catch (error) {
-        
         console.error(error);
         el['todo-list'].replaceChildren(createLoadError());
         setTodoNotice(`Не удалось отобразить задачи: ${error.message}`, 'error');
@@ -655,7 +643,6 @@
     el['todo-notice'].className = `todo-notice${type ? ` is-${type}` : ''}`;
   }
 
-  
   const findTodo = (id) => state.todos.find((item) => item.id === Number(id));
   const replaceTodo = (updated) => {
     state.todos = state.todos.map((item) => (item.id === updated.id ? updated : item));
@@ -755,7 +742,6 @@
     );
   }
 
-  
   const todoPayload = (data) => ({
     todo: data.get('todo'),
     userId: Number(data.get('userId')),
@@ -770,7 +756,6 @@
 
     const payload = todoPayload(new FormData(form));
 
-    
     if (form.dataset.todoForm !== 'create') {
       payload.todo = payload.todo.trim();
       if (!payload.todo) {
@@ -782,7 +767,6 @@
       return;
     }
 
-    
     const submit = form.querySelector('[type="submit"]');
     const originalLabel = submit?.textContent;
     form.dataset.busy = 'true';
@@ -812,11 +796,8 @@
     }
   }
 
-  
-  
-  
   function enqueueSave(todoId, work) {
-    const task = (saveQueue.get(todoId) ?? Promise.resolve()).then(work); 
+    const task = (saveQueue.get(todoId) ?? Promise.resolve()).then(work);
     saveQueue.set(todoId, task);
     task.then(() => { if (saveQueue.get(todoId) === task) saveQueue.delete(todoId); });
     return task;
@@ -826,7 +807,7 @@
     renderTodos();
     refreshUserViews();
     const dialog = el['todo-detail-dialog'];
-    
+
     if (dialog?.open && state.activeDialogId === String(todoId) && !dialog.querySelector('form')) renderTodoDetails(todoId);
   }
 
@@ -845,7 +826,6 @@
       } catch (error) {
         const current = findTodo(todoId);
         if (current) {
-         
           const reverted = { ...current };
           Object.keys(changes).forEach((key) => { if (current[key] === changes[key]) reverted[key] = previous[key]; });
           replaceTodo(reverted);
@@ -889,10 +869,9 @@
 
   function createTask1Element(trigger) {
     if (!document.querySelector('.new-div')) document.body.append(h('div', { className: 'new-div', textContent: 'Я новый элемент' }));
-    if (trigger) trigger.disabled = true; 
+    if (trigger) trigger.disabled = true;
   }
 
-  
   function updateTask2ClassList() {
     const target = el['task2-target-element'];
     const output = el['class-list-output'];
@@ -901,7 +880,6 @@
     output.textContent = classes.length ? classes.join(', ') : '(классы отсутствуют)';
   }
 
-  
   const clampDimension = (value) => {
     const parsed = Number.parseInt(value, 10);
     return Number.isFinite(parsed) ? Math.min(20, Math.max(1, parsed)) : 3;
@@ -961,19 +939,17 @@
     output.replaceChildren(`Всего закрашено ячеек: ${total}. По цветам: `, ...withSeparators);
   }
 
-  
   function initTheme() {
     let theme = matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
     try {
       const saved = localStorage.getItem('theme');
       if (saved === 'dark' || saved === 'light') theme = saved;
     } catch {
-      
+      // localStorage недоступен
     }
     setTheme(theme);
   }
 
-  
   function setTheme(theme, persist = false) {
     document.documentElement.dataset.theme = theme;
     const themeButton = el['theme-toggle-btn'];
@@ -982,7 +958,7 @@
     try {
       localStorage.setItem('theme', theme);
     } catch {
-      
+      // localStorage недоступен
     }
   }
 
